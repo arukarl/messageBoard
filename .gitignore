@@ -2,6 +2,7 @@
 *.key
 *.pem
 *.zip
+*.css
 /.idea/*
 /.venv/*
 __pycache__/
