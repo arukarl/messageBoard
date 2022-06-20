@@ -12,11 +12,10 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/cont
 
 kubectl apply -f aws_secret.yaml
 
-kubectl apply -f deployment.yaml
-
 kubectl create secret tls main-tls --key="SectigoSSL.key" --cert="SectigoSSL.crt"
 
+kubectl apply -f deployment.yaml
+
+echo "Waiting 30s before appling ingress"
+sleep 30
 kubectl apply -f ingress.yaml
-
-
-
