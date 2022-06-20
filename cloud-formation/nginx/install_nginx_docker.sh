@@ -17,10 +17,9 @@ sudo yum install nginx -y
 sudo aws s3 cp s3://mb-conf-folder/nginx.conf /etc/nginx/nginx.conf
 
 # Add GeoTrust SSL cert and private key
-sudo aws s3 cp s3://mb-conf-folder/nginx_GeoTrust.crt /etc/ssl/certs/nginx_GeoTrust.crt
+sudo aws s3 cp s3://mb-conf-folder/SectigoSSL.crt /etc/ssl/certs/SectigoSSL.crt
 sudo mkdir -p /etc/ssl/private
-sudo aws s3 cp s3://mb-conf-folder/nginx_GeoTrust.key /etc/ssl/private/nginx_GeoTrust.key
-sudo aws s3 cp s3://mb-conf-folder/karlaru_com.pem /etc/ssl/certs/karlaru_com.pem
+sudo aws s3 cp s3://mb-conf-folder/SectigoSSL.key /etc/ssl/private/SectigoSSL.key
 
 # Add set of Diffie-Hellman parameters
 sudo aws s3 cp s3://mb-conf-folder/dhparam.pem /etc/nginx/dhparam.pem

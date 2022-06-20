@@ -32,7 +32,7 @@ def lambda_handler(event, context):
     message_id = image_metadata['x-amz-meta-message_id']
 
     # New url to resized image
-    new_url = "https://d2uj644jlhz1yf.cloudfront.net/" + "thumbnails/" + img_name
+    new_url = "https://d3jwmvy177h8cq.cloudfront.net/" + "thumbnails/" + img_name
 
     sqs_client.send_message(QueueUrl='https://sqs.eu-north-1.amazonaws.com/978039897892/image_rezised',
                             MessageBody=json.dumps({

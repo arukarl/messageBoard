@@ -11,9 +11,20 @@ spec:
   tls:
     - hosts:
         - karlaru.com
+        - k8s.karlaru.com
       secretName: main-tls
   rules:
     - host: karlaru.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: messageboard
+                port:
+                  number: 5000
+    - host: k8s.karlaru.com
       http:
         paths:
           - path: /

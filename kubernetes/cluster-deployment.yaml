@@ -19,6 +19,7 @@ spec:
     - encryptedVolume: true
       instanceGroup: master-eu-north-1b
       name: b
+      volumeSize: 1
     memoryRequest: 100Mi
     name: main
   - cpuRequest: 100m
@@ -26,6 +27,7 @@ spec:
     - encryptedVolume: true
       instanceGroup: master-eu-north-1b
       name: b
+      volumeSize: 1
     memoryRequest: 100Mi
     name: events
   iam:
@@ -39,7 +41,6 @@ spec:
   kubernetesVersion: 1.23.7
   masterPublicName: api.karlaru.com
   networkCIDR: 10.0.0.0/20
-  networkID: vpc-0690c0ef15707a5eb
   networking:
     kubenet: {}
   nonMasqueradeCIDR: 100.0.0.0/20
@@ -50,7 +51,7 @@ spec:
   - 0.0.0.0/0
   - ::/0
   subnets:
-  - cidr: 10.0.2.0/24
+  - cidr: 10.0.0.0/24
     name: eu-north-1b
     type: Public
     zone: eu-north-1b
