@@ -37,5 +37,4 @@ aws lambda update-function-code --function-name delete-image \
 
 # Build cleanup
 rm *.zip
-rm -r message-board/lambda_img_scaler/python
-
+rm -r lambda_img_scaler/python
