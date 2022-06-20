@@ -13,7 +13,7 @@
 
 
 ### For Lambda functions
-Zip files of lambda functions that [build_webapp.sh](../build_webapp.sh) script will create locally before uploading files to s3 bucket.
+Zip files of lambda functions that [build_webapp.sh](../build_messageboard.sh) script will create locally before uploading files to s3 bucket.
 - Create thumbnail (scale) function zip file
 - Pillow library layer for image scaler function
 - Update DynamoDB img url to thumbnail url

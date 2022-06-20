@@ -5,5 +5,5 @@
 /.idea/*
 /.venv/*
 __pycache__/
-/lambda_img_scaler/python/
-/k8s/aws_secret.yaml
+/message-board/lambda_img_scaler/python/
+/kubernetes/aws_secret.yaml
