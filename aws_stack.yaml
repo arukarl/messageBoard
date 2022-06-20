@@ -1,0 +1,366 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A message board webapp
+
+Resources:
+
+################### DOMAIN ###################
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    DeletionPolicy: Retain
+    Properties:
+      Name: karlaru.com
+
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: karlaru.com
+      Type: A
+      TTL: 60
+      ResourceRecords:
+        - !GetAtt EC2NginxInstance.PublicIp
+
+
+
+########## CONTENT DELIVERY NETWORK ##########
+
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    DeletionPolicy: Retain
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - DomainName: karlaru-mb.s3.eu-north-1.amazonaws.com
+            Id: S3-bucket
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginIdentity}'
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          TargetOriginId: S3-bucket
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  CloudFrontOriginIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: 'comment'
+
+
+
+############### DATA STORAGE ###############
+
+# Bucket for storing images and website static files (css)
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: karlaru-mb
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: images/
+            Function: !GetAtt ImgScaler.Arn
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginIdentity}'
+            Action: 's3:GetObject'
+            Resource: arn:aws:s3:::karlaru-mb/*
+          - Effect: Allow
+            Principal:
+              AWS: '978039897892'
+            Action: 's3:*'
+            Resource: arn:aws:s3:::karlaru-mb/*
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: users
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  MessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: messages
+      AttributeDefinitions:
+        - AttributeName: message_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: message_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+
+
+############## EC2 #################
+
+# Instance for running NGINX
+  EC2NginxInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.nano
+      ImageId: ami-08bdc08970fcbd34a
+      KeyName: aws_key
+      IamInstanceProfile: !Ref NginxInstanceProfile
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          SubnetId:
+            Ref: Subnet
+          GroupSet:
+            - !Ref NginxSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: '10'
+            DeleteOnTermination: 'true'
+      Tags:
+        - Key: "Name"
+          Value: "nginx"
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash 
+            aws s3 cp s3://mb-conf-folder/install_nginx_docker.sh .
+            sudo bash install_nginx_docker.sh
+
+  NginxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http and https incoming
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 88.196.254.151/32
+
+  NginxInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: NginxProfile
+      Roles:
+        - Ref: "RootRole"
+
+  RootRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+
+
+############## LAMBDA FUNCTIONS #################
+
+# Creating thumbnails for pictures
+  ImgScaler:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: img_scaler
+      Code:
+        S3Bucket: mb-conf-folder
+        S3Key: img_scaler.zip
+      Runtime: python3.8
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Handler: img_scaler.lambda_handler
+      Timeout: 60
+      Layers:
+        - !Ref Pillow
+
+  LambdaS3Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ImgScaler
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt S3Bucket.Arn
+
+  Pillow:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: pillow
+      Content:
+        S3Bucket: mb-conf-folder
+        S3Key: pillow_layer.zip
+      CompatibleRuntimes:
+        - python3.8
+
+# Changing img url to thumbnail url
+  ImgUrlChanger:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: dynamo_img_update
+      Code:
+        S3Bucket: mb-conf-folder
+        S3Key: dynamo_img_update.zip
+      Runtime: python3.9
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Handler: dynamo_img_update.lambda_handler
+
+  ImgScaledQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: image_rezised
+
+  ImgUrlChangerTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt ImgScaledQueue.Arn
+      FunctionName: !Ref ImgUrlChanger
+
+# Deleting images when message is deleted
+  ImgDeleter:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: delete-image
+      Code:
+        S3Bucket: mb-conf-folder
+        S3Key: img_delete.zip
+      Runtime: python3.9
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Handler: img_delete.lambda_handler
+
+  ImgDeleteQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: delete-image
+
+  ImgDeleteTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt ImgDeleteQueue.Arn
+      FunctionName: !Ref ImgDeleter
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+
+
+############## NETWORKING #################
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/20
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: "Name"
+          Value: "mb-VPC"
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: "Name"
+          Value: "mb-PublicSubnet"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: "Name"
+          Value: "mb-RouteTable"
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+

@@ -1,0 +1,7 @@
+{% extends "signed_in.html" %}
+
+<!--- Show only my messages --->
+{% block filter_messages %}
+    <h3 class="text-success">My messages</h3>
+    <a href="/" class="btn btn-secondary">Show all messages</a>
+{% endblock %}

@@ -1,0 +1,139 @@
+# export KOPS_STATE_STORE=s3://karl-aru-mb-state
+# kops export kubecfg --admin
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.1/deploy/static/provider/cloud/deploy.yaml
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: karlaru.com
+spec:
+  api:
+    dns: {}
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://karl-aru-mb-state/karlaru.com
+  etcdClusters:
+  - cpuRequest: 200m
+    etcdMembers:
+    - encryptedVolume: true
+      instanceGroup: master-eu-north-1b
+      name: b
+    memoryRequest: 100Mi
+    name: main
+  - cpuRequest: 100m
+    etcdMembers:
+    - encryptedVolume: true
+      instanceGroup: master-eu-north-1b
+      name: b
+    memoryRequest: 100Mi
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubelet:
+    anonymousAuth: false
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  - ::/0
+  kubernetesVersion: 1.23.7
+  masterPublicName: api.karlaru.com
+  networkCIDR: 10.0.0.0/20
+  networkID: vpc-0690c0ef15707a5eb
+  networking:
+    kubenet: {}
+  nonMasqueradeCIDR: 100.0.0.0/20
+  serviceAccountIssuerDiscovery:
+    discoveryStore: s3://karlaru-mb-oidc/karlaru.com/discovery/karlaru.com
+    enableAWSOIDCProvider: true
+  sshAccess:
+  - 0.0.0.0/0
+  - ::/0
+  subnets:
+  - cidr: 10.0.2.0/24
+    name: eu-north-1b
+    type: Public
+    zone: eu-north-1b
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+  additionalPolicies:
+    node: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": ["dynamodb:*", "s3:*", "sqs:*", "secretsmanager:*"],
+          "Resource": ["*"]
+        }
+      ]
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2022-06-13T18:19:26Z"
+  generation: 3
+  labels:
+    kops.k8s.io/cluster: karlaru.com
+  name: master-eu-north-1b
+spec:
+  image: 099720109477/ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20220609
+  instanceMetadata:
+    httpPutResponseHopLimit: 3
+    httpTokens: required
+  machineType: t3.medium
+  maxPrice: "0.03"
+  maxSize: 2
+  minSize: 1
+  mixedInstancesPolicy:
+    instances:
+    - t3.medium
+    onDemandAboveBase: 0
+    onDemandBase: 0
+    spotAllocationStrategy: capacity-optimized
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-north-1b
+    lifecycle: spot
+  role: Master
+  rootVolumeSize: 8
+  rootVolumeType: gp3
+  subnets:
+  - eu-north-1b
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2022-06-13T18:19:26Z"
+  generation: 21
+  labels:
+    kops.k8s.io/cluster: karlaru.com
+  name: nodes-eu-north-1b
+spec:
+  image: 099720109477/ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20220609
+  instanceMetadata:
+    httpPutResponseHopLimit: 1
+    httpTokens: required
+  machineType: t3.small
+  maxPrice: "0.01"
+  maxSize: 5
+  minSize: 2
+  mixedInstancesPolicy:
+    instances:
+    - t3.small
+    onDemandAboveBase: 0
+    onDemandBase: 0
+    spotAllocationStrategy: capacity-optimized
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes-eu-north-1b
+    lifecycle: spot
+  role: Node
+  rootVolumeSize: 8
+  rootVolumeType: gp3
+  subnets:
+  - eu-north-1b

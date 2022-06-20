@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://d3jwmvy177h8cq.cloudfront.net/static/style_min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Disable trying to load tab icon -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <title>message Board</title>
+</head>
+<body>
+<div class="container-sm" style="max-width: 800px">
+    <h3 onclick="window.location.reload();">Post the Emotions!</h3>
+    {% block authentication %}{% endblock %}
+    <hr>
+    {% block form %}{% endblock %}
+
+    {% block filter_messages %}{% endblock %}
+    {% block message_table %}
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col" style="width: 150px">Image</th>
+                <th scope="col" style="width: 33%">Metadata</th>
+                <th scope="col">Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for m in messages %}
+                <tr>
+                    <td>
+                        <img src="{{ m.img }}" style="width: 150px;height: 150px;object-fit: cover;"></td>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>DateTime:</td>
+                                <td>{{ m.timestamp.split(".")[0] }}</td>
+                            </tr>
+                            <tr>
+                                <td>Author:</td>
+                                <td>{{ m.author }}</td>
+                            </tr>
+                            <tr>
+                                <td>Location:</td>
+                                <th>{{ m.location }}</th>
+                            </tr>
+                            {% if current_user.id == m.google_id %}
+                            <tr>
+                            <td><a href="/delete?id={{ m.message_id }}"
+                                   class="btn btn-danger"
+                                   onclick="return confirm('Confirm to delete this message');">Delete</a></td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </td>
+                    <td>{{ m.description }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+</div>
+</body>
+</html>

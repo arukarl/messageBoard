@@ -1,0 +1,11 @@
+scripts
+.git
+.gitignore
+.idea
+aws*
+lambda*
+README*
+mb*
+static*
+aws_*
+build_*

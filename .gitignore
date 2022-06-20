@@ -1,0 +1,9 @@
+*.crt
+*.key
+*.pem
+*.zip
+/.idea/*
+/.venv/*
+__pycache__/
+/lambda_img_scaler/python/
+/k8s/aws_secret.yaml
