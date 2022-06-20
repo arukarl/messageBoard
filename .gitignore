@@ -3,8 +3,6 @@
 *.pem
 *.zip
 *.css
-/.idea/*
-/.venv/*
-__pycache__/
-/message-board/lambda_img_scaler/python/
-/kubernetes/aws_secret.yaml
+/.*
+__*
+*secret*
