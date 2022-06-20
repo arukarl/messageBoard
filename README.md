@@ -1,4 +1,4 @@
-# Message Board app by Karl Aru
+# Message Board app
 powered by **AWS**
 
 #### [Website on karlaru.com](https://karlaru.com)
@@ -21,11 +21,11 @@ powered by **AWS**
 - [x] [Google reCAPTCHA form protection](https://www.google.com/recaptcha/)
 - [x] [NGINX](https://www.nginx.com/)
 - [x] [User authentication](https://developers.google.com/identity)
+- [x] [Kubernetes cluster](https://kubernetes.io/)
+- [x] Limit uploads to avoid extensive AWS costs
 
 #### To do
 
-- [ ] Kubernetes cluster
-- [ ] Limit uploads to avoid extensive AWS costs
 - [ ] A way to see original size images
 - [ ] Flask advanced conf
 - [ ] Catch exceptions
