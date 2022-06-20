@@ -16,7 +16,7 @@ sudo yum install nginx -y
 # Add nginx Server conf file
 sudo aws s3 cp s3://mb-conf-folder/nginx.conf /etc/nginx/nginx.conf
 
-# Add GeoTrust SSL cert and private key
+# Add SSL cert and private key
 sudo aws s3 cp s3://mb-conf-folder/SectigoSSL.crt /etc/ssl/certs/SectigoSSL.crt
 sudo mkdir -p /etc/ssl/private
 sudo aws s3 cp s3://mb-conf-folder/SectigoSSL.key /etc/ssl/private/SectigoSSL.key
