@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: mb
-        image: karlaru/message-board
+        image: karlaru/message-board:latest
         ports:
           - name: tcp
             containerPort: 5000

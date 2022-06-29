@@ -14,7 +14,7 @@ app.secret_key = 'superSecretKey'
 # Flask login config
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "/"
+login_manager.login_view = "/login"
 
 # AWS config
 aws_region = "eu-north-1"
@@ -95,16 +95,31 @@ class User:
         return self.id
 
 
+@app.route("/", methods=['GET'])
+def home():
+    """ Home page, display all messages """
+    messages = read_messages_db()
+    return render_template('home.html', messages=messages)
+
+
+@app.route("/login", methods=['GET'])
+def log_in():
+    """ Login page """
+    return render_template('login.html')
+
+
 @app.route("/login", methods=['POST'])
 def login():
     """ Verify Google user, create User object and put user data to DynamoDB """
     token = str(request.form['credential'])
-    CLIENT_ID = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
-    idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-    userid = idinfo['sub']
-    username = idinfo['name']
+    client_id = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
+    id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
+    userid = id_info['sub']
+    username = id_info['name']
+
     user_table.put_item(Item={"id": userid, "username": username})
     login_user(User(username, userid))
+
     return redirect("/my-messages")
 
 
@@ -119,7 +134,14 @@ def logout():
     return redirect("/")
 
 
-@app.route("/post-message", methods=['POST'])
+@app.route("/post", methods=['GET'])
+@login_required
+def post():
+    """ Image posting form """
+    return render_template('post_image.html')
+
+
+@app.route("/save", methods=['POST'])
 @login_required
 def post_message():
     """ Upload full size image to S3. Make DynamoDB message entry. """
@@ -132,7 +154,7 @@ def post_message():
         if img_format not in accepted_image_types:
             flash("Invalid photo type")
             flash("Accepted only " + ', '.join(accepted_image_types))
-            return redirect("/my-messages")
+            return redirect("/post")
 
         message_id = str(uuid.uuid4())
         s3_name = str(uuid.uuid4()) + '.' + img_format
@@ -141,8 +163,17 @@ def post_message():
         put_dynamodb(message_id, s3_name, new_author, new_location, new_message)
     else:
         flash('Invalid reCAPTCHA!')
+        return redirect("/post")
+    return redirect("/my")
 
-    return redirect("/my-messages")
+
+@app.route("/my", methods=['GET'])
+@login_required
+def my_messages():
+    """ Signed in page showing users' messages """
+    data = read_messages_db()
+    user_messages = filter(lambda message: message['google_id'] == current_user.id, data)
+    return render_template('my_images.html', messages=user_messages)
 
 
 @app.route("/delete", methods=['GET'])
@@ -163,23 +194,11 @@ def delete():
     return my_messages()
 
 
-@app.route("/", methods=['GET'])
-def home():
-    """ Home page, display all messages """
-    messages = read_messages_db()
-    if current_user.is_authenticated:
-        return render_template('signed_in-all_messages.html', messages=messages)
-    else:
-        return render_template('signed_out.html', messages=messages)
-
-
-@app.route("/my-messages", methods=['GET'])
+@app.route("/acc", methods=['GET'])
 @login_required
-def my_messages():
-    """ Signed in page showing users' messages """
-    data = read_messages_db()
-    user_messages = filter(lambda message: message['google_id'] == current_user.id, data)
-    return render_template('signed_in-my_messages.html', messages=user_messages)
+def my_account():
+    """ Account information """
+    return render_template('my_account.html')
 
 
 @app.errorhandler(404)

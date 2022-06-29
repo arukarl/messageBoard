@@ -1,27 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://d3jwmvy177h8cq.cloudfront.net/static/style_min.css" rel="stylesheet">
+    <!-- <link href="https://d3jwmvy177h8cq.cloudfront.net/static/style_min.css" rel="stylesheet"> -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Disable trying to load tab icon -->
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="icon" href="https://d3jwmvy177h8cq.cloudfront.net/static/icon.png">
     <title>message Board</title>
 </head>
 <body>
 <div class="container-sm" style="max-width: 800px">
-    <h3 onclick="window.location.reload();">Post the Emotions!</h3>
-    {% block authentication %}{% endblock %}
-    <hr>
-    {% block form %}{% endblock %}
 
-    {% block filter_messages %}{% endblock %}
-    {% block message_table %}
+    <!-- MENU BAR -->
+    <div class="container">
+      <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+        <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 link-secondary">Home</a></li>
+          <li><a href="/my" class="nav-link px-2 link-secondary">My images</a></li>
+          <li><a href="/post" class="nav-link px-2 link-secondary">Post new image</a></li>
+          <li><a href="https://linkedin.com/in/karl-aru-6744ab175" class="nav-link px-2 link-secondary" target="_blank">About me</a></li>
+          <li><a href="https://docs.karlaru.com" class="nav-link px-2 link-secondary" target="_blank">Docs</a></li>
+        </ul>
+        <div class="col-md-3 text-end">
+          {% if not current_user.is_authenticated %}
+            <a href="/login" class="btn btn-outline-success me-2">Login</a>
+          {% else %}
+            <a href="/acc" class="form-text text-muted">My account</a>
+            <a href="/logout" onclick="google.accounts.id.disableAutoSelect();" class="btn btn-danger me-2">Logout</a>
+          {% endif %}
+        </div>
+      </header>
+    </div>
+
+    <div class="container">
+
+    <!-- PAGE TITLE -->
+    <h3>{% block heading %}{% endblock %}</h3>
+
+    <!-- DISPLAY FLASHED MESSAGES -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p class="text-danger">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- PAGE BODY -->
+    {% block body %}
         <table class="table table-striped">
             <thead>
             <tr>
                 <th scope="col" style="width: 150px">Image</th>
-                <th scope="col" style="width: 33%">Metadata</th>
-                <th scope="col">Description</th>
+                <th scope="col">Metadata</th>
             </tr>
             </thead>
             <tbody>
@@ -43,21 +73,25 @@
                                 <td>Location:</td>
                                 <th>{{ m.location }}</th>
                             </tr>
+                            <tr>
+                                <td>Description:</td>
+                                <td>{{ m.description }}</td>
+                            </tr>
                             {% if current_user.id == m.google_id %}
                             <tr>
                             <td><a href="/delete?id={{ m.message_id }}"
-                                   class="btn btn-danger"
+                                   class="btn btn-secondary"
                                    onclick="return confirm('Confirm to delete this message');">Delete</a></td>
                             </tr>
                             {% endif %}
                         </table>
                     </td>
-                    <td>{{ m.description }}</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     {% endblock %}
+    </div>
 </div>
 </body>
 </html>

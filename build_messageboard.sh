@@ -9,4 +9,4 @@ docker login
 docker push karlaru/message-board:latest
 
 # Copy style file to S3 and set browser cache control
-aws s3 cp static/style_min.css s3://karlaru-mb/static/ --cache-control max-age=2592000 --acl public-read
+aws s3 cp static/ s3://karlaru-mb/static/ --cache-control max-age=2592000 --acl public-read  --recursive
