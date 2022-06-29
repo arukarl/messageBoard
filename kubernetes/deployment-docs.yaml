@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs
+spec:
+  selector:
+    matchLabels:
+      app: docs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: docs
+    spec:
+      containers:
+      - name: docs
+        image: karlaru/mbdocs
+        ports:
+          - name: tcp
+            containerPort: 3000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs
+  labels:
+    app: docs
+spec:
+  selector:
+    app: docs
+  ports:
+    - port: 3000

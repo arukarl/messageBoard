@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block heading %} Post new image {% endblock %}
+
+{% block body %}
+    <form action="/save" class="card p-3 bg-light" method="post" enctype="multipart/form-data">
+
+        <div class="mb-3">
+            <label class="form-label input-sm">Author</label>
+            <input type="text" class="form-control input-sm" name="author" value="{{ current_user.name }}" required>
+            <small class="form-text text-muted">Default name is from Google account. Can be changed for privacy.</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label input-sm">Location</label>
+            <input type="text" class="form-control input-sm" name="location" placeholder="Location" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="formFile" class="form-label">Image (max 50 MB)</label>
+            <input class="form-control" type="file" name="img" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description" rows="5" required></textarea>
+        </div>
+
+        {{ recaptcha }}
+
+        <div class="mb-3" style="padding-top: 15px">
+            <input type="submit" class="btn btn-success" value="Post Picture">
+        </div>
+
+    </form>
+{% endblock %}
