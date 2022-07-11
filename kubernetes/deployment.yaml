@@ -11,8 +11,6 @@ spec:
     metadata:
       labels:
         app: mb
-      annotations:
-        iam.amazonaws.com/role: mb-role
     spec:
       containers:
       - name: mb
@@ -20,21 +18,16 @@ spec:
         ports:
           - name: tcp
             containerPort: 5000
+        volumeMounts:
+          - mountPath: /etc/boto.cfg
+            name: aws-conf
+            subPath: boto.cfg
 
-        env:
-          - name: AWS_ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                name: iam-user
-                key: AWS_ACCESS_KEY_ID
-                optional: false
-          - name: AWS_SECRET_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: iam-user
-                key: AWS_SECRET_ACCESS_KEY
-                optional: false
-
+      volumes:
+      - name: aws-conf
+        secret:
+            secretName: aws-secret
+            optional: false
 
 ---
 
