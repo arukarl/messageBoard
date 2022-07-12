@@ -14,6 +14,8 @@ kubectl create secret generic aws-credentials --from-file=boto.cfg
 
 kubectl create secret tls main-tls --key="SectigoSSL.key" --cert="SectigoSSL.crt"
 
+kubectl create secret generic flask-conf --from-file=../message-board/conf.cfg
+
 kubectl apply -f deployment.yaml
 
 echo "Waiting 30s before appling ingress"

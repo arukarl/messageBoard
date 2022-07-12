@@ -7,6 +7,7 @@ from flask_recaptcha import ReCaptcha
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from boto3.dynamodb.conditions import Key
 
 app = Flask(__name__)
 app.config.from_pyfile("conf.cfg")
@@ -27,13 +28,6 @@ dynamodb = boto3.resource('dynamodb', region_name=aws_region)
 messages_table = dynamodb.Table("messages")
 user_table = dynamodb.Table("users")
 
-# Load secret app config variables from AWS Secrets Manager (for reCAPTCHA)
-sm_client = boto3.client('secretsmanager', region_name='eu-north-1')
-secrets_string = sm_client.get_secret_value(SecretId="reCAPTCHA")['SecretString']
-secrets_dict = json.loads(secrets_string)
-for key, value in secrets_dict.items():
-    app.config[key] = value
-
 # Create a ReCaptcha object
 recaptcha = ReCaptcha(app)
 
@@ -41,17 +35,23 @@ recaptcha = ReCaptcha(app)
 accepted_image_types = ['jpg', 'jpeg', 'bmp', 'gif', 'png']
 
 
-def image_to_s3(img_path, s3_name, message_id):
+def upload_s3(img_path, s3_name, message_id):
     """ Upload image file with given random name to s3 bucket """
     s3_client.upload_fileobj(img_path, s3_bucket, 'images/' + s3_name, ExtraArgs={"ACL": "public-read",
                                                                                   "Metadata": {
                                                                                       "message_id": message_id}})
 
 
-def read_messages_db():
+def img_url(message):
+    message['img'] = cdn_url + "thumbnails/" + message['img']
+    return message
+
+
+def get_dynamodb():
     """ Read all messages from AWS DynamoDB """
 
-    messages = messages_table.scan()['Items']
+    messages = messages_table.scan(FilterExpression=Key('thumbnail').eq("true"))['Items']
+    messages = map(img_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
 
 
@@ -60,12 +60,13 @@ def put_dynamodb(message_id, s3_name, author, location, description):
 
     messages_table.put_item(Item={
         "message_id": message_id,
-        "img": cdn_url + 'images/' + s3_name,
+        "img": s3_name,
         "timestamp": str(datetime.now()),
         "author": author,
         "location": location,
         "description": description,
-        "google_id": current_user.id
+        "google_id": current_user.id,
+        "thumbnail": "false"
     })
 
 
@@ -77,8 +78,7 @@ def load_user(user_id):
 
 
 class User:
-    """ Flask User class """
-
+    """ Flask-Login User class """
     def __init__(self, name, id, active=True):
         self.id = id
         self.name = name
@@ -98,18 +98,18 @@ class User:
 @app.route("/", methods=['GET'])
 def home():
     """ Home page, display all messages """
-    messages = read_messages_db()
+    messages = get_dynamodb()
     return render_template('home.html', messages=messages)
 
 
 @app.route("/login", methods=['GET'])
-def log_in():
+def login_page():
     """ Login page """
     return render_template('login.html')
 
 
 @app.route("/login", methods=['POST'])
-def login():
+def login_auth():
     """ Verify Google user, create User object and put user data to DynamoDB """
     token = str(request.form['credential'])
     client_id = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
@@ -154,24 +154,24 @@ def post_message():
         if img_format not in accepted_image_types:
             flash("Invalid photo type")
             flash("Accepted only " + ', '.join(accepted_image_types))
-            return redirect("/post")
+            return redirect(f"/post?author={new_author}&location={new_location}&description={new_message}")
 
         message_id = str(uuid.uuid4())
         s3_name = str(uuid.uuid4()) + '.' + img_format
-        image_to_s3(img_file, s3_name, message_id)
+        upload_s3(img_file, s3_name, message_id)
 
         put_dynamodb(message_id, s3_name, new_author, new_location, new_message)
     else:
         flash('Invalid reCAPTCHA!')
-        return redirect("/post")
-    return redirect("/my")
+        return redirect(f"/post?author={new_author}&location={new_location}&description={new_message}")
+    return my_messages()
 
 
 @app.route("/my", methods=['GET'])
 @login_required
 def my_messages():
     """ Signed in page showing users' messages """
-    data = read_messages_db()
+    data = get_dynamodb()
     user_messages = filter(lambda message: message['google_id'] == current_user.id, data)
     return render_template('my_images.html', messages=user_messages)
 
@@ -189,7 +189,7 @@ def delete():
             sqs_client.send_message(QueueUrl='https://sqs.eu-north-1.amazonaws.com/978039897892/delete-image',
                                     MessageBody=json.dumps({"image_name": img_name}))
         except:
-            flash("Message is already deleted")
+            flash("Message is not found")
 
     return my_messages()
 

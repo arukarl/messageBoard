@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: mb
-        image: karlaru/message-board
+        image: karlaru/message-board:latest
         ports:
           - name: tcp
             containerPort: 5000
@@ -23,11 +23,18 @@ spec:
             name: aws-conf
             subPath: boto.cfg
             readOnly: true
+          - mountPath: "/messageBoard/conf.cfg"
+            name: flask-conf
+            subPath: conf.cfg
+            readOnly: true
 
       volumes:
       - name: aws-conf
         secret:
             secretName: aws-credentials
+      - name: flask-conf
+        secret:
+            secretName: flask-conf
 
 ---
 

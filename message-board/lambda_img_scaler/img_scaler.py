@@ -6,6 +6,7 @@ from PIL import Image
 size = (150, 150)
 s3_bucket = 'karlaru-mb'
 aws_region = "eu-north-1"
+QueueUrl = 'https://sqs.eu-north-1.amazonaws.com/978039897892/image_rezised'
 
 s3_client = boto3.client('s3', region_name=aws_region)
 sqs_client = boto3.client('sqs', region_name=aws_region)
@@ -31,11 +32,7 @@ def lambda_handler(event, context):
         'HTTPHeaders']
     message_id = image_metadata['x-amz-meta-message_id']
 
-    # New url to resized image
-    new_url = "https://d3jwmvy177h8cq.cloudfront.net/" + "thumbnails/" + img_name
-
-    sqs_client.send_message(QueueUrl='https://sqs.eu-north-1.amazonaws.com/978039897892/image_rezised',
+    sqs_client.send_message(QueueUrl=QueueUrl,
                             MessageBody=json.dumps({
-                                "message_id": message_id,
-                                "new_location": new_url
+                                "message_id": message_id
                             }))

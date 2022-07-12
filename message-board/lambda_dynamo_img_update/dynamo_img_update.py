@@ -10,8 +10,7 @@ def lambda_handler(event, context):
         body = json.loads(record['body'])
 
         message_id = body['message_id']
-        new_img_url = body['new_location']
 
         db_table.update_item(Key={'message_id': message_id},
-                             UpdateExpression="set img = :i",
-                             ExpressionAttributeValues={':i': new_img_url})
+                             UpdateExpression="set thumbnail = :i",
+                             ExpressionAttributeValues={':i': 'true'})

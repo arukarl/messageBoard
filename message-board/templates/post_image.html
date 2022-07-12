@@ -7,23 +7,23 @@
 
         <div class="mb-3">
             <label class="form-label input-sm">Author</label>
-            <input type="text" class="form-control input-sm" name="author" value="{{ current_user.name }}" required>
+            <input type="text" class="form-control input-sm" id="author" name="author" placeholder="Author">
             <small class="form-text text-muted">Default name is from Google account. Can be changed for privacy.</small>
         </div>
 
         <div class="mb-3">
             <label class="form-label input-sm">Location</label>
-            <input type="text" class="form-control input-sm" name="location" placeholder="Location" required>
+            <input type="text" class="form-control input-sm" id="location" name="location" placeholder="Location">
         </div>
 
         <div class="mb-3">
             <label for="formFile" class="form-label">Image (max 50 MB)</label>
-            <input class="form-control" type="file" name="img" required>
+            <input class="form-control" type="file" name="img" required accept='.jpg, .jpeg, .bmp, .gif, .png'>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Description</label>
-            <textarea class="form-control" name="description" rows="5" required></textarea>
+            <textarea class="form-control" id="description" name="description" rows="5"></textarea>
         </div>
 
         {{ recaptcha }}
@@ -33,4 +33,20 @@
         </div>
 
     </form>
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+
+        let author = urlParams.get('author');
+        const loc = urlParams.get('location');
+        const desc = urlParams.get('description');
+
+        if (author == null || author === "") {
+            author = "{{ current_user.name }}";
+        }
+
+        document.getElementById("author").value=author;
+        document.getElementById("location").value=loc;
+        document.getElementById("description").value=desc;
+    </script>
 {% endblock %}
