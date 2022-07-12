@@ -3,6 +3,7 @@
 *.pem
 *.zip
 *.css
+*.cfg
 *secret*
 /.*
 __*

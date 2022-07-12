@@ -14,20 +14,20 @@ spec:
     spec:
       containers:
       - name: mb
-        image: karlaru/message-board:latest
+        image: karlaru/message-board
         ports:
           - name: tcp
             containerPort: 5000
         volumeMounts:
-          - mountPath: /etc/boto.cfg
+          - mountPath: "/etc/boto.cfg"
             name: aws-conf
             subPath: boto.cfg
+            readOnly: true
 
       volumes:
       - name: aws-conf
         secret:
-            secretName: aws-secret
-            optional: false
+            secretName: aws-credentials
 
 ---
 

@@ -10,7 +10,7 @@ kops validate cluster --wait 15m
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/aws/deploy.yaml
 
-kubectl apply -f aws_secret.yaml
+kubectl create secret generic aws-credentials --from-file=boto.cfg
 
 kubectl create secret tls main-tls --key="SectigoSSL.key" --cert="SectigoSSL.crt"
 

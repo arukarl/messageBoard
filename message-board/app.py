@@ -9,7 +9,7 @@ from google.auth.transport import requests
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 app = Flask(__name__)
-app.secret_key = 'superSecretKey'
+app.config.from_pyfile("conf.cfg")
 
 # Flask login config
 login_manager = LoginManager()
