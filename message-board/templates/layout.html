@@ -3,12 +3,13 @@
 <head>
     <!-- <link href="https://d3jwmvy177h8cq.cloudfront.net/static/style_min.css" rel="stylesheet"> -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link href="https://d3jwmvy177h8cq.cloudfront.net/static/custom_v1.css" rel="stylesheet"  integrity="sha384-S3SWrs+usHy1ocpZ9Amb+XF6xq0OjJXUmMugL8KAQhbxLZ3IuyUF1lzb00t2D80j" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="https://d3jwmvy177h8cq.cloudfront.net/static/icon.png">
     <title>message Board</title>
 </head>
 <body>
-<div class="container-sm" style="max-width: 800px">
+<div class="container-sm">
 
     <!-- MENU BAR -->
     <div class="container">
@@ -50,15 +51,18 @@
         <table class="table table-striped">
             <thead>
             <tr>
-                <th scope="col" style="width: 150px">Image</th>
-                <th scope="col">Metadata</th>
+                <th class="col col150">Thumbnail</th>
+                <th class="col">Metadata</th>
             </tr>
             </thead>
             <tbody>
             {% for m in messages %}
                 <tr>
                     <td>
-                        <img src="{{ m.img }}" style="width: 150px;height: 150px;object-fit: cover;"></td>
+                        <a href="/image/{{ m.img }}">
+                            <img src="{{ m.img_url }}" class="thumb">
+                        </a>
+                    </td>
                     <td>
                         <table>
                             <tr>
@@ -77,13 +81,6 @@
                                 <td>Description:</td>
                                 <td>{{ m.description }}</td>
                             </tr>
-                            {% if current_user.id == m.google_id %}
-                            <tr>
-                            <td><a href="/delete?id={{ m.message_id }}"
-                                   class="btn btn-secondary"
-                                   onclick="return confirm('Confirm to delete this message');">Delete</a></td>
-                            </tr>
-                            {% endif %}
                         </table>
                     </td>
                 </tr>

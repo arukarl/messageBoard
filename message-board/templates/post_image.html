@@ -5,9 +5,11 @@
 {% block body %}
     <form action="/save" class="card p-3 bg-light" method="post" enctype="multipart/form-data">
 
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
         <div class="mb-3">
             <label class="form-label input-sm">Author</label>
-            <input type="text" class="form-control input-sm" id="author" name="author" placeholder="Author">
+            <input type="text" class="form-control input-sm" id="author" name="author" placeholder="Author" value="{{ current_user.name }}">
             <small class="form-text text-muted">Default name is from Google account. Can be changed for privacy.</small>
         </div>
 
@@ -28,25 +30,11 @@
 
         {{ recaptcha }}
 
-        <div class="mb-3" style="padding-top: 15px">
+        <hr>
+        <div class="mb-3">
             <input type="submit" class="btn btn-success" value="Post Picture">
         </div>
 
     </form>
-    <script>
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-
-        let author = urlParams.get('author');
-        const loc = urlParams.get('location');
-        const desc = urlParams.get('description');
-
-        if (author == null || author === "") {
-            author = "{{ current_user.name }}";
-        }
-
-        document.getElementById("author").value=author;
-        document.getElementById("location").value=loc;
-        document.getElementById("description").value=desc;
-    </script>
+    <script src="https://d3jwmvy177h8cq.cloudfront.net/static/form-script.js" integrity="sha384-zMbOckCiNF5+Ymqh+kk+GgpcJlejHwxEpTEpQBhywch+0Elhw7irVXV7A1OAxILB" crossorigin="anonymous"></script>
 {% endblock %}

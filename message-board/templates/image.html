@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block heading %} Image {% endblock %}
+
+{% block body %}
+    <table>
+        <tr>
+            <td>DateTime:</td>
+            <td>{{ message.timestamp.split(".")[0] }}</td>
+        </tr>
+        <tr>
+            <td>Author:</td>
+            <td>{{ message.author }}</td>
+        </tr>
+        <tr>
+            <td>Location:</td>
+            <th>{{ message.location }}</th>
+        </tr>
+        <tr>
+            <td>Description:</td>
+            <td>{{ message.description }}</td>
+        </tr>
+
+    </table>
+
+    <hr>
+
+    <div class="image-container">
+        <h6>Original image</h6>
+        <img src="{{ message.img_url }}" alt="" class="img-fluid">
+    </div>
+
+    <hr>
+    <a href="/" id="back" class="btn btn-secondary">Back to thumbnails</a>
+    <script src="https://d3jwmvy177h8cq.cloudfront.net/static/back.js"
+            integrity='sha384-5lgGFbY/LOhcc2KiltKgRu6BiekTeKQ/lWlJIuU82Q6uAyaa8uKhXxaYxtTIE5BC'
+            crossorigin="anonymous"></script>
+
+
+    {% if current_user.id == message.google_id %}
+    <a href="/delete?id={{ message.message_id }}" class="btn btn-light float-end">Delete</a>
+    {% endif %}
+
+{% endblock %}

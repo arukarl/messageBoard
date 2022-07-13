@@ -3,6 +3,7 @@ scripts
 .gitignore
 .idea
 *.cfg
+*.js
 aws*
 lambda*
 README*

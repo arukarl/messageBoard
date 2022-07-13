@@ -70,7 +70,7 @@ class ReCaptcha(object):
         :return:
         """
         return "" if not self.is_enabled else ("""
-        <script src='//www.google.com/recaptcha/api.js?hl={LANGUAGE}'></script>
+        <script src='https://www.google.com/recaptcha/api.js?hl={LANGUAGE}'></script>
         <div class="g-recaptcha" data-sitekey="{SITE_KEY}" data-theme="{THEME}" data-type="{TYPE}" data-size="{SIZE}"\
          data-tabindex="{TABINDEX}"></div>
         """.format(SITE_KEY=self.site_key, THEME=self.theme, TYPE=self.type, SIZE=self.size, LANGUAGE=self.language, TABINDEX=self.tabindex))

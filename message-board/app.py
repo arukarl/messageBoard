@@ -9,8 +9,25 @@ from google.auth.transport import requests
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from boto3.dynamodb.conditions import Key
 
+from flask_seasurf import SeaSurf
+from flask_talisman import Talisman
+
 app = Flask(__name__)
 app.config.from_pyfile("conf.cfg")
+
+# Security
+csrf = SeaSurf(app)
+Talisman(app,
+         force_https=False,
+         content_security_policy={
+             'default-src': [
+                     'accounts.google.com',                          # Google Sign-In
+                     'd3jwmvy177h8cq.cloudfront.net',                # CloudFront CDN
+                     '*.gstatic.com',                                # Google fonts, reCaptcha
+                     'cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/',  # Bootstrap
+                     'www.google.com'                                # Google reCaptcha
+             ]
+         })
 
 # Flask login config
 login_manager = LoginManager()
@@ -43,7 +60,7 @@ def upload_s3(img_path, s3_name, message_id):
 
 
 def img_url(message):
-    message['img'] = cdn_url + "thumbnails/" + message['img']
+    message['img_url'] = cdn_url + "thumbnails/" + message['img']
     return message
 
 
@@ -79,6 +96,7 @@ def load_user(user_id):
 
 class User:
     """ Flask-Login User class """
+
     def __init__(self, name, id, active=True):
         self.id = id
         self.name = name
@@ -108,6 +126,7 @@ def login_page():
     return render_template('login.html')
 
 
+@csrf.exempt
 @app.route("/login", methods=['POST'])
 def login_auth():
     """ Verify Google user, create User object and put user data to DynamoDB """
@@ -161,10 +180,12 @@ def post_message():
         upload_s3(img_file, s3_name, message_id)
 
         put_dynamodb(message_id, s3_name, new_author, new_location, new_message)
+        flash("Message stored")
+        flash("Generating thumbnail.... Refresh after few seconds")
     else:
         flash('Invalid reCAPTCHA!')
         return redirect(f"/post?author={new_author}&location={new_location}&description={new_message}")
-    return my_messages()
+    return redirect('/my')
 
 
 @app.route("/my", methods=['GET'])
@@ -199,6 +220,15 @@ def delete():
 def my_account():
     """ Account information """
     return render_template('my_account.html')
+
+
+@app.route("/image/<image_name>", methods=['GET'])
+def image(image_name):
+    """ Image analysis """
+
+    message = messages_table.scan(FilterExpression=Key('img').eq(image_name))['Items'][0]
+    message['img_url'] = cdn_url + "images/" + message['img']
+    return render_template('image.html', message=message)
 
 
 @app.errorhandler(404)
