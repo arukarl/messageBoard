@@ -1,6 +1,7 @@
 import json
 import uuid
 import boto3
+import re
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
 from flask_recaptcha import ReCaptcha
@@ -21,11 +22,12 @@ Talisman(app,
          force_https=False,
          content_security_policy={
              'default-src': [
-                     'accounts.google.com',                          # Google Sign-In
-                     'd3jwmvy177h8cq.cloudfront.net',                # CloudFront CDN
-                     '*.gstatic.com',                                # Google fonts, reCaptcha
-                     'cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/',  # Bootstrap
-                     'www.google.com'                                # Google reCaptcha
+                 'accounts.google.com',  # Google Sign-In
+                 'd3jwmvy177h8cq.cloudfront.net',  # CloudFront CDN
+                 'www.gstatic.com',  # Google reCaptcha
+                 'fonts.gstatic.com',  # Google fonts
+                 'cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/',  # Bootstrap CSS
+                 'www.google.com'  # Google reCaptcha
              ]
          })
 
@@ -39,7 +41,7 @@ aws_region = "eu-north-1"
 s3_bucket = "karlaru-mb"
 cdn_url = "https://d3jwmvy177h8cq.cloudfront.net/"
 
-# AWS resources
+# AWS resources (state)
 s3_client = boto3.client('s3', region_name=aws_region)
 dynamodb = boto3.resource('dynamodb', region_name=aws_region)
 messages_table = dynamodb.Table("messages")
@@ -51,12 +53,19 @@ recaptcha = ReCaptcha(app)
 # Allowed img types
 accepted_image_types = ['jpg', 'jpeg', 'bmp', 'gif', 'png']
 
+# Sanitize form input
+regex = re.compile(r'<[^>]+>')
+
+
+def remove_html(string):
+    return regex.sub('', string)
+
 
 def upload_s3(img_path, s3_name, message_id):
     """ Upload image file with given random name to s3 bucket """
-    s3_client.upload_fileobj(img_path, s3_bucket, 'images/' + s3_name, ExtraArgs={"ACL": "public-read",
-                                                                                  "Metadata": {
-                                                                                      "message_id": message_id}})
+    s3_client.upload_fileobj(img_path, s3_bucket, 'images/' + s3_name,
+                             ExtraArgs={'CacheControl': 'max-age=86400, public',
+                                        'Metadata': {'message_id': message_id}})
 
 
 def img_url(message):
@@ -130,11 +139,30 @@ def login_page():
 @app.route("/login", methods=['POST'])
 def login_auth():
     """ Verify Google user, create User object and put user data to DynamoDB """
-    token = str(request.form['credential'])
-    client_id = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
-    id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
-    userid = id_info['sub']
-    username = id_info['name']
+
+    # Verify the Cross-Site Request Forgery (CSRF) token
+    csrf_token_cookie = request.cookies.get('g_csrf_token')
+    if not csrf_token_cookie:
+        flash('No CSRF token in Cookie.')
+        return login_page()
+    csrf_token_body = request.form['g_csrf_token']
+    if not csrf_token_body:
+        flash('No CSRF token in post body.')
+        return login_page()
+    if csrf_token_cookie != csrf_token_body:
+        flash('Failed to verify double submit cookie.')
+        return login_page()
+
+    # Validate Google ID token
+    try:
+        token = str(request.form['credential'])
+        client_id = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
+        id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
+        userid = id_info['sub']
+        username = id_info['name']
+    except ValueError:
+        flash('Invalid Google ID token')
+        return login_page()
 
     user_table.put_item(Item={"id": userid, "username": username})
     login_user(User(username, userid))
@@ -164,9 +192,9 @@ def post():
 @login_required
 def post_message():
     """ Upload full size image to S3. Make DynamoDB message entry. """
-    new_author = request.form['author']
-    new_location = request.form['location']
-    new_message = request.form['description']
+    new_author = remove_html(request.form['author'])
+    new_location = remove_html(request.form['location'])
+    new_message = remove_html(request.form['description'])
     if recaptcha.verify():
         img_file = request.files['img']
         img_format = img_file.filename.split('.')[-1].lower()
@@ -212,7 +240,7 @@ def delete():
         except:
             flash("Message is not found")
 
-    return my_messages()
+    return redirect('/my')
 
 
 @app.route("/acc", methods=['GET'])
