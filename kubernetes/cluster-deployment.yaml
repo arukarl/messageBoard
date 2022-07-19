@@ -30,15 +30,12 @@ spec:
       volumeSize: 1
     memoryRequest: 100Mi
     name: events
-  iam:
-    allowContainerRegistry: true
-    legacy: false
   kubelet:
     anonymousAuth: false
   kubernetesApiAccess:
   - 0.0.0.0/0
   - ::/0
-  kubernetesVersion: 1.23.7
+  kubernetesVersion: 1.23.8
   masterPublicName: api.karlaru.com
   networkCIDR: 10.0.0.0/20
   networking:
@@ -60,15 +57,6 @@ spec:
       type: Public
     masters: private
     nodes: private
-  additionalPolicies:
-    node: |
-      [
-        {
-          "Effect": "Allow",
-          "Action": ["dynamodb:*", "s3:*", "sqs:*", "secretsmanager:*"],
-          "Resource": ["*"]
-        }
-      ]
 
 ---
 

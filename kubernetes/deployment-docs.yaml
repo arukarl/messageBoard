@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: docs
-        image: karlaru/mbdocs:latest
+        image: karlaru/mbdocs
         ports:
           - name: tcp
             containerPort: 3000
