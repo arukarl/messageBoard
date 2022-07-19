@@ -15,6 +15,7 @@ spec:
       containers:
       - name: docs
         image: karlaru/mbdocs
+        imagePullPolicy: Always
         ports:
           - name: tcp
             containerPort: 3000

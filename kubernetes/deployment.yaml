@@ -15,6 +15,7 @@ spec:
       containers:
       - name: mb
         image: karlaru/message-board
+        imagePullPolicy: Always
         ports:
           - name: tcp
             containerPort: 5000

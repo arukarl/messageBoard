@@ -4,6 +4,7 @@
 *.zip
 *.css
 *.cfg
+*.jpeg
 *secret*
 /.*
 __*
