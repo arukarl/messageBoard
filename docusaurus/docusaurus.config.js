@@ -89,40 +89,7 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Intro',
-                to: '/',
-              },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'Linked-In',
-                href: 'https://linkedin.com/in/karl-aru-6744ab175',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              {
-                label: 'Blog',
-                to: '/blog',
-              },
-              {
-                label: 'GitHub',
-                href: 'https://github.com/KarlAruEE/messageBoard',
-              },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} Karl Aru. Built with Docusaurus.`,
+        copyright: `Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,
