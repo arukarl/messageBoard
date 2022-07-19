@@ -4,19 +4,20 @@
 
 {% block body %}
     <h6> Google Identity</h6>
+    <p>Login to enable posting new images!</p>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div id="g_id_onload"
          data-client_id="672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
-         data-login_uri="/login"
-         data-auto_prompt="false">
+         data-login_uri="https://karlaru.com/login"
+         data-cancel_on_tap_outside="false">
 
     </div>
     <div class="g_id_signin"
          data-type="standard"
-         data-size="medium"
-         data-theme="filled_blue"
+         data-size="large"
+         data-theme="outline"
          data-text="sign_in_with"
-         data-shape="pill"
+         ata-shape="rectangular"
          data-logo_alignment="left"
          data-width=400>
     </div>
