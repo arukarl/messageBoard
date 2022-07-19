@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Base resources for message-board app
+Description: State resources for message-board app
 
 Resources:
 
@@ -20,10 +20,16 @@ Resources:
           AllowedMethods:
             - GET
             - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
           TargetOriginId: S3-bucket
-          ViewerProtocolPolicy: redirect-to-https
+          ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
