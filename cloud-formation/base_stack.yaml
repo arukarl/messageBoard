@@ -44,6 +44,13 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       BucketName: karlaru-mb
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: 's3:ObjectCreated:*'
@@ -66,10 +73,15 @@ Resources:
               AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginIdentity}'
             Action: 's3:GetObject'
             Resource: arn:aws:s3:::karlaru-mb/*
+
           - Effect: Allow
             Principal:
               AWS: '978039897892'
-            Action: 's3:*'
+            Action: [
+                      "s3:PutObject",
+                      "s3:GetObject",
+                      "s3:DeleteObject"
+                    ]
             Resource: arn:aws:s3:::karlaru-mb/*
 
   UsersTable:
@@ -187,6 +199,7 @@ Resources:
       EventSourceArn: !GetAtt ImgDeleteQueue.Arn
       FunctionName: !Ref ImgDeleter
 
+# Role for Lambda functions
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -200,10 +213,26 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: root
+        - PolicyName: lambda-role
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: '*'
-                Resource: '*'
+                Action: [
+                          "s3:PutObject",
+                          "s3:GetObject",
+                          "s3:DeleteObject",
+                          "sqs:GetQueueUrl",
+                          "sqs:GetQueueAttributes",
+                          "sqs:ReceiveMessage",
+                          "sqs:SendMessage",
+                          "sqs:DeleteMessage",
+                          "sqs:PurgeQueue",
+                          "dynamodb:UpdateItem"
+                        ]
+                Resource: [
+                          "arn:aws:s3:::karlaru-mb/*",
+                          "arn:aws:sqs:eu-north-1:978039897892:image_rezised",
+                          "arn:aws:sqs:eu-north-1:978039897892:delete-image",
+                          "arn:aws:dynamodb:eu-north-1:978039897892:table/messages"
+                        ]
