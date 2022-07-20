@@ -31,14 +31,18 @@
     </div>
 
     <hr>
-    <a href="/" id="back" class="btn btn-secondary">Back to thumbnails</a>
+
+    <a href="/" id="back" class="btn btn-secondary float-start">Back to thumbnails</a>
     <script src="https://d3jwmvy177h8cq.cloudfront.net/static/back.js"
             integrity='sha384-5lgGFbY/LOhcc2KiltKgRu6BiekTeKQ/lWlJIuU82Q6uAyaa8uKhXxaYxtTIE5BC'
             crossorigin="anonymous"></script>
 
-
     {% if current_user.id == message.google_id %}
-    <a href="/delete?id={{ message.message_id }}" class="btn btn-light float-end">Delete</a>
+    <form action="/delete" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="{{ message.message_id }}">
+        <input type="submit" class="btn btn-light float-end" value="Delete">
+    </form>
     {% endif %}
 
 {% endblock %}
