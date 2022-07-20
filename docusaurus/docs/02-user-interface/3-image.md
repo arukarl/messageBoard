@@ -12,8 +12,22 @@ If the image belongs to current signed-in user, then **Delete** button appears b
 
 <img src="/img/image-logged.png" width="600"/>
 
+:::tip Delete Button
+
+Delete message with all related images
+
+:::
+
+***
+
 ### Everyone else
 
-Do not have **Delete** option.
+Authenticated and non authenticated users
 
 <img src="/img/image-notlogged.png" width="600"/>
+
+:::danger No Delete Button
+
+One cannot delete other users images!
+
+:::

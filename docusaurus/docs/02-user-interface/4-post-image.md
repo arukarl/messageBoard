@@ -10,6 +10,12 @@ Post new image as signed-in user. Only required field is **Image** with size lim
 
 <img src="/img/post.png" width="600"/>
 
+***
+
 ### Not Authenticated
 
-No access
+:::danger No Access
+
+User must be authenticated to access this page
+
+:::

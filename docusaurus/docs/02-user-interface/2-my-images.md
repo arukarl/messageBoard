@@ -10,6 +10,12 @@ Images of current signed-in user.
 
 <img src="/img/my-images.png" width="600"/>
 
+***
+
 ### Not Authenticated
 
-No access
+:::danger No Access
+
+User must be authenticated to access this page
+
+:::

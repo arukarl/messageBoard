@@ -25,5 +25,6 @@ Lambda functions that are triggered by:
 ## Content Delivery Network
 
 All images, scripts and style files are served using content delivery network. 
+Only HTML pages come directly from backend.
 
 <img src="/img/CDN.svg" width="600"/>
