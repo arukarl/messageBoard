@@ -229,12 +229,14 @@ def my_messages():
 def delete():
     """ Delete message """
     message_id = request.form["id"]
-    if message_id:
+    google_id = request.form["google_id"]
+    if message_id and google_id == current_user.id:
         try:
             messages_table.delete_item(Key={"message_id": message_id})
         except:
             flash("Message is not found")
-
+    else:
+        flash("Permission denied")
     return redirect('/my')
 
 

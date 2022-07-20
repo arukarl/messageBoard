@@ -41,6 +41,7 @@
     <form action="/delete" method="post">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ message.message_id }}">
+        <input type="hidden" name="google_id" value="{{ message.google_id }}">
         <input type="submit" class="btn btn-light float-end" value="Delete">
     </form>
     {% endif %}
