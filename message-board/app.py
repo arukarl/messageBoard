@@ -1,4 +1,3 @@
-import json
 import uuid
 import boto3
 import re
@@ -225,18 +224,14 @@ def my_messages():
     return render_template('my_images.html', messages=user_messages)
 
 
-@app.route("/delete", methods=['GET'])
+@app.route("/delete", methods=['POST'])
 @login_required
 def delete():
     """ Delete message """
-    message_id = request.args.get("id")
+    message_id = request.form["id"]
     if message_id:
         try:
-            img_name = messages_table.get_item(Key={'message_id': message_id})['Item']['img'].split("/")[-1]
             messages_table.delete_item(Key={"message_id": message_id})
-            sqs_client = boto3.client('sqs', region_name=aws_region)
-            sqs_client.send_message(QueueUrl='https://sqs.eu-north-1.amazonaws.com/978039897892/delete-image',
-                                    MessageBody=json.dumps({"image_name": img_name}))
         except:
             flash("Message is not found")
 
