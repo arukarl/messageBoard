@@ -30,6 +30,7 @@ Resources:
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
           TargetOriginId: S3-bucket
           ViewerProtocolPolicy: https-only
+        HttpVersion: http2
         PriceClass: PriceClass_100
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
@@ -113,6 +114,8 @@ Resources:
         - AttributeName: message_id
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: OLD_IMAGE
 
 
 
@@ -153,32 +156,6 @@ Resources:
       CompatibleRuntimes:
         - python3.8
 
-# Changing img url to thumbnail url
-  ImgUrlChanger:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: dynamo_img_update
-      Code:
-        S3Bucket: mb-conf-folder
-        S3Key: dynamo_img_update.zip
-      Runtime: python3.9
-      Role: !GetAtt LambdaRole.Arn
-      PackageType: Zip
-      Handler: dynamo_img_update.lambda_handler
-
-  ImgScaledQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: image_rezised
-
-  ImgUrlChangerTrigger:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 10
-      Enabled: true
-      EventSourceArn: !GetAtt ImgScaledQueue.Arn
-      FunctionName: !Ref ImgUrlChanger
-
 # Deleting images when message is deleted
   ImgDeleter:
     Type: AWS::Lambda::Function
@@ -192,18 +169,15 @@ Resources:
       PackageType: Zip
       Handler: img_delete.lambda_handler
 
-  ImgDeleteQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: delete-image
-
-  ImgDeleteTrigger:
+  ImagesDeleteTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      BatchSize: 10
+      BatchSize: 100
+      MaximumBatchingWindowInSeconds: 5
       Enabled: true
-      EventSourceArn: !GetAtt ImgDeleteQueue.Arn
+      EventSourceArn: !GetAtt MessagesTable.StreamArn
       FunctionName: !Ref ImgDeleter
+      StartingPosition: LATEST
 
 # Role for Lambda functions
   LambdaRole:
@@ -234,11 +208,20 @@ Resources:
                           "sqs:SendMessage",
                           "sqs:DeleteMessage",
                           "sqs:PurgeQueue",
-                          "dynamodb:UpdateItem"
+                          "dynamodb:UpdateItem",
+                          "dynamodb:DescribeStream",
+                          "dynamodb:GetRecords",
+                          "dynamodb:GetShardIterator",
+                          "dynamodb:ListStreams",
+                          "logs:CreateLogGroup",
+                          "logs:CreateLogStream",
+                          "logs:PutLogEvents"
                         ]
                 Resource: [
                           "arn:aws:s3:::karlaru-mb/*",
                           "arn:aws:sqs:eu-north-1:978039897892:image_rezised",
                           "arn:aws:sqs:eu-north-1:978039897892:delete-image",
-                          "arn:aws:dynamodb:eu-north-1:978039897892:table/messages"
+                          "arn:aws:dynamodb:eu-north-1:978039897892:table/messages",
+                          "arn:aws:dynamodb:eu-north-1:978039897892:table/messages/stream/*",
+                          "arn:aws:logs:eu-north-1:978039897892:log-group:/aws/*"
                         ]
