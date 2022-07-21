@@ -29,8 +29,8 @@ def lambda_handler(event, context):
         s3_client.upload_file(upload_path, s3_bucket, "thumbnails/" + img_name,
                               ExtraArgs={'CacheControl': 'max-age=2592000, public'})
 
-        image_metadata = s3_client.head_object(Bucket=s3_bucket, Key="images/" + img_name)['ResponseMetadata'][
-            'HTTPHeaders']
+        image_metadata = s3_client.head_object(Bucket=s3_bucket,
+                                               Key="images/" + img_name)['ResponseMetadata']['HTTPHeaders']
 
         message_id = image_metadata['x-amz-meta-message_id']
 

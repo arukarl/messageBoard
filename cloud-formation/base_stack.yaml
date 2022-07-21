@@ -134,6 +134,7 @@ Resources:
       PackageType: Zip
       Handler: img_scaler.lambda_handler
       Timeout: 60
+      MemorySize: 256
       Layers:
         - !Ref Pillow
 
