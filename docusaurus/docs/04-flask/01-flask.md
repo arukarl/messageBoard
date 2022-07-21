@@ -10,7 +10,7 @@ sidebar_position: 1
 
 ### Templates
 
-Dependency graph
+Dependency graph and URL mappings
 
 ### Functions
 
