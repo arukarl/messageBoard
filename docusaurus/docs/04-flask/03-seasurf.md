@@ -12,7 +12,7 @@ This is used in when posting and deleting messages.
 
 ### Security
 
-Added limitations
+Changes in default config:
 
 ```python title="conf.cfg"
 ...
