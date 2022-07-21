@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CDN Firewall
+
+Resources:
+
+######### Web Application Firewall #########
+
+  ACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Block: {}
+      Name: CDN-Firewall
+      Scope: CLOUDFRONT
+      VisibilityConfig:
+        SampledRequestsEnabled: false
+        CloudWatchMetricsEnabled: true
+        MetricName: ACL
+      Rules:
+        - Name: 'referer'
+          Priority: 0
+          Action:
+            Allow: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: false
+            CloudWatchMetricsEnabled: true
+            MetricName: referer
+          Statement:
+            ByteMatchStatement:
+              SearchString: 'https://karlaru.com/'
+              FieldToMatch:
+                SingleHeader:
+                  Name: 'referer'
+              TextTransformations:
+                - Priority: 0
+                  Type: 'NONE'
+              PositionalConstraint: 'EXACTLY'
+
+  ACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref CloudFront
+      WebACLArn: !Ref ACL
