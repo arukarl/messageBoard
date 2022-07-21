@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ### Overview
 
-[Flask-Login](https://github.com/maxcountryman/flask-login) provides user session management for Flask.
+**[Flask-Login](https://github.com/maxcountryman/flask-login)** provides user session management for Flask.
 
 <img src="/img/flask-login.svg" width="800"/>
 
@@ -75,6 +75,7 @@ class User:
         return self.id
 
 
+@csrf.exempt
 @app.route("/login", methods=['POST'])
 def login_auth():
     """ Verify Google user, create User object and put user data to DynamoDB """

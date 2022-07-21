@@ -6,10 +6,11 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_recaptcha import ReCaptcha
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from flask_seasurf import SeaSurf
 from flask_talisman import Talisman
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
 
 app = Flask(__name__)
 app.config.from_pyfile("conf.cfg")
