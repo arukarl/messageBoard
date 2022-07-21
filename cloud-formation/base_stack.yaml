@@ -174,7 +174,7 @@ Resources:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
       BatchSize: 100
-      MaximumBatchingWindowInSeconds: 5
+      MaximumBatchingWindowInSeconds: 120
       Enabled: true
       EventSourceArn: !GetAtt MessagesTable.StreamArn
       FunctionName: !Ref ImgDeleter

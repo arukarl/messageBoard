@@ -4,7 +4,12 @@ sidebar_position: 3
 
 # Lambda IAM Role
 
-Lambda functions role with policy
+### Overview
+
+Grants permissions to Lambda functions.
+Resources and actions are as limited as possible for security reasons.
+
+### CloudFormation code snippet
 
 ```yaml title="base_stack.yaml"
   LambdaRole:

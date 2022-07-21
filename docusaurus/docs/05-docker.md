@@ -9,7 +9,7 @@ messageBoard Flask web application is built into Docker image.
 ### Gunicorn
 
 Flask doesn't come with production grade WSGI HTTP server out of the box, so
-I chose [Gunicorn]('https://gunicorn.org/') as the production grade HTTP server.
+I chose [Gunicorn](https://gunicorn.org) as the production grade HTTP server.
 
 ### Dockerfile
 

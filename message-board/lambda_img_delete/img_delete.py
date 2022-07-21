@@ -2,7 +2,6 @@ import boto3
 
 s3_bucket = 'karlaru-mb'
 aws_region = "eu-north-1"
-
 s3_client = boto3.client('s3', region_name=aws_region)
 
 
@@ -10,7 +9,6 @@ def lambda_handler(event, context):
     for record in event["Records"]:
 
         eventName = record["eventName"]
-        print(f"eventName: {eventName}")
 
         if eventName == "REMOVE":
             img_name = record["dynamodb"]["OldImage"]["img"]["S"]
@@ -20,8 +18,3 @@ def lambda_handler(event, context):
                                          {'Key': 'images/' + img_name},
                                          {'Key': 'thumbnails/' + img_name}
                                      ]})
-
-            print(f"Deleted images: {img_name}")
-
-        else:
-            print("Doing nothing")

@@ -15,7 +15,7 @@ Message ID is stored in S3 image file metadata, this enables updating correct me
 :::
 
 
-<img src="/img/create-thumbnail.svg" width="600"/>
+<img src="/img/create-thumbnail.svg" width="800"/>
 
 ### CloudFormation
 
