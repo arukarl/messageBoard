@@ -33,6 +33,7 @@ Talisman(app,
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "/login"
+login_manager.session_protection = "strong"
 
 # AWS config
 aws_region = "eu-north-1"
@@ -161,16 +162,13 @@ def login_auth():
     user_table.put_item(Item={"id": userid, "username": username})
     login_user(User(username, userid))
 
-    return redirect("/my-messages")
+    return redirect("/my")
 
 
 @app.route("/logout", methods=['GET'])
 @login_required
 def logout():
     """ Logout user """
-    if request.args.get("rm") == "true":
-        user_table.delete_item(Key={"id": current_user.id})
-
     logout_user()
     return redirect("/")
 
