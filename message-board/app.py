@@ -22,10 +22,10 @@ Talisman(app,
          content_security_policy={
              'default-src': [
                  'accounts.google.com',  # Google Sign-In
-                 'd3jwmvy177h8cq.cloudfront.net',  # CloudFront CDN
+                 'd3jwmvy177h8cq.cloudfront.net',  # CloudFront CDN (images and static files)
                  'www.gstatic.com',  # Google reCaptcha
                  'fonts.gstatic.com',  # Google fonts
-                 'cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/',  # Bootstrap CSS
+                 'cdn.jsdelivr.net/npm/',  # Bootstrap CSS
                  'www.google.com'  # Google reCaptcha
              ]
          })
