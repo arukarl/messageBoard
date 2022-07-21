@@ -1,14 +1,13 @@
 import uuid
 import boto3
 import re
+from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_recaptcha import ReCaptcha
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from boto3.dynamodb.conditions import Key
-
 from flask_seasurf import SeaSurf
 from flask_talisman import Talisman
 
@@ -57,30 +56,26 @@ regex = re.compile(r'<[^>]+>')
 
 
 def remove_html(string):
+    """ Remove all HTML elements from string """
     return regex.sub('', string)
 
 
-def upload_s3(img_path, s3_name, message_id):
-    """ Upload image file with given random name to s3 bucket """
-    s3_client.upload_fileobj(img_path, s3_bucket, 'images/' + s3_name,
-                             ExtraArgs={'CacheControl': 'max-age=86400, public',
-                                        'Metadata': {'message_id': message_id}})
-
-
-def img_url(message):
-    message['img_url'] = cdn_url + "thumbnails/" + message['img']
+def set_images_url(message):
+    """ Add images CDN URLs to message object """
+    message['thumbnail_url'] = cdn_url + "thumbnails/" + message['img']
+    message['img_url'] = cdn_url + "images/" + message['img']
     return message
 
 
-def get_dynamodb():
+def get_dynamodb_messages(FilterExpression):
     """ Read all messages from AWS DynamoDB """
 
-    messages = messages_table.scan(FilterExpression=Key('thumbnail').eq("true"))['Items']
-    messages = map(img_url, messages)
+    messages = messages_table.scan(FilterExpression=FilterExpression)['Items']
+    messages = map(set_images_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
 
 
-def put_dynamodb(message_id, s3_name, author, location, description):
+def put_dynamodb_messages(message_id, s3_name, author, location, description):
     """ Write new message to AWS DynamoDB """
 
     messages_table.put_item(Item={
@@ -124,7 +119,7 @@ class User:
 @app.route("/", methods=['GET'])
 def home():
     """ Home page, display all messages """
-    messages = get_dynamodb()
+    messages = get_dynamodb_messages(FilterExpression=Key('thumbnail').eq("true"))
     return render_template('home.html', messages=messages)
 
 
@@ -203,10 +198,14 @@ def post_message():
             return redirect(f"/post?author={new_author}&location={new_location}&description={new_message}")
 
         message_id = str(uuid.uuid4())
-        s3_name = str(uuid.uuid4()) + '.' + img_format
-        upload_s3(img_file, s3_name, message_id)
+        img_s3_name = str(uuid.uuid4()) + '.' + img_format
 
-        put_dynamodb(message_id, s3_name, new_author, new_location, new_message)
+        s3_client.upload_fileobj(img_file, s3_bucket, 'images/' + img_s3_name,
+                                 ExtraArgs={'CacheControl': 'max-age=86400, public',
+                                            'Metadata': {'message_id': message_id}})
+
+        put_dynamodb_messages(message_id, img_s3_name, new_author, new_location, new_message)
+
         flash("Message stored")
         flash("Generating thumbnail.... Refresh after few seconds")
     else:
@@ -219,9 +218,8 @@ def post_message():
 @login_required
 def my_messages():
     """ Signed in page showing users' messages """
-    data = get_dynamodb()
-    user_messages = filter(lambda message: message['google_id'] == current_user.id, data)
-    return render_template('my_images.html', messages=user_messages)
+    messages = get_dynamodb_messages(FilterExpression=Key('google_id').eq(current_user.id))
+    return render_template('my_images.html', messages=messages)
 
 
 @app.route("/delete", methods=['POST'])
@@ -231,10 +229,7 @@ def delete():
     message_id = request.form["id"]
     google_id = request.form["google_id"]
     if message_id and google_id == current_user.id:
-        try:
-            messages_table.delete_item(Key={"message_id": message_id})
-        except:
-            flash("Message is not found")
+        messages_table.delete_item(Key={"message_id": message_id})
     else:
         flash("Permission denied")
     return redirect('/my')
@@ -250,15 +245,14 @@ def my_account():
 @app.route("/image/<image_name>", methods=['GET'])
 def image(image_name):
     """ Image analysis """
-
-    message = messages_table.scan(FilterExpression=Key('img').eq(image_name))['Items'][0]
-    message['img_url'] = cdn_url + "images/" + message['img']
-    return render_template('image.html', message=message)
+    messages = get_dynamodb_messages(FilterExpression=Key('img').eq(image_name))
+    return render_template('image.html', messages=messages)
 
 
 @app.errorhandler(404)
 def page_not_found(e):
     """ Redirect all nonexistent URLs to home page"""
+    flash("Page not found. Redirecting to homepage. (404)")
     return redirect('/')
 
 

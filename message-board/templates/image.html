@@ -3,22 +3,23 @@
 {% block heading %} Image {% endblock %}
 
 {% block body %}
+    {% for m in messages %}
     <table>
         <tr>
             <td>DateTime:</td>
-            <td>{{ message.timestamp.split(".")[0] }}</td>
+            <td>{{ m.timestamp.split(".")[0] }}</td>
         </tr>
         <tr>
             <td>Author:</td>
-            <td>{{ message.author }}</td>
+            <td>{{ m.author }}</td>
         </tr>
         <tr>
             <td>Location:</td>
-            <th>{{ message.location }}</th>
+            <th>{{ m.location }}</th>
         </tr>
         <tr>
             <td>Description:</td>
-            <td>{{ message.description }}</td>
+            <td>{{ m.description }}</td>
         </tr>
 
     </table>
@@ -27,7 +28,7 @@
 
     <div class="image-container">
         <h6>Original image</h6>
-        <img src="{{ message.img_url }}" alt="" class="img-fluid">
+        <img src="{{ m.img_url }}" alt="" class="img-fluid">
     </div>
 
     <hr>
@@ -37,13 +38,14 @@
             integrity='sha384-5lgGFbY/LOhcc2KiltKgRu6BiekTeKQ/lWlJIuU82Q6uAyaa8uKhXxaYxtTIE5BC'
             crossorigin="anonymous"></script>
 
-    {% if current_user.id == message.google_id %}
+    {% if current_user.id == m.google_id %}
     <form action="/delete" method="post">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id" value="{{ message.message_id }}">
-        <input type="hidden" name="google_id" value="{{ message.google_id }}">
+        <input type="hidden" name="id" value="{{ m.message_id }}">
+        <input type="hidden" name="google_id" value="{{ m.google_id }}">
         <input type="submit" class="btn btn-light float-end" value="Delete">
     </form>
     {% endif %}
+    {% endfor %}
 
 {% endblock %}
