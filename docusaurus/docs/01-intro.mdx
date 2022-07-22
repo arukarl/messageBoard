@@ -1,0 +1,362 @@
+---
+slug: /
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Overview
+
+Building this webapp started during
+**[Cloud Computing course](https://courses.cs.ut.ee/2022/cloud/spring/Main/Practice2)** in UT.
+
+:::tip
+
+This was one of the best courses I have ever taken. Highly recommended!
+
+:::
+
+## Version History
+
+Major releases. Complexity and sophistication increase substantially with each version.
+
+:::tip Heroku coldstart
+
+When visiting Heroku deployments (versions 1 and 2), it takes about half a minute to start container!
+
+:::
+
+<Tabs>
+<TabItem value="v1" label="Version 1" default>
+
+Based on course materials by [Jakob Mass](https://bitbucket.org/jaks6/cloud-computing-2022-lab-1/src/master/)
+
+**Frontend**
+
+[Deployed on Heroku](https://karlaru-v1.herokuapp.com/)
+<img src="/img/heroku-v1.png"/>
+
+**Backend**
+<img src="/img/heroku-v1.svg"/>
+
+<details>
+<summary>Flask webapp code</summary>
+
+```python title="app.py"
+import json
+from datetime import datetime
+
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+
+def read_messages_from_file():
+    """ Read all messages from a JSON file"""
+    with open('data.json') as messages_file:
+        return json.load(messages_file)
+
+
+def append_message_to_file(content):
+    """ Read the contents of JSON file, add this message to it's contents, then write it back to disk. """
+    data = read_messages_from_file()
+    new_message = {
+        'content': content,
+        'timestamp': datetime.now().isoformat(" ", "seconds")
+    }
+    data['messages'].append(new_message)
+    with open('data.json', mode='w') as messages_file:
+        json.dump(data, messages_file)
+
+
+# The Flask route, defining the main behaviour of the webserver:
+@app.route("/")
+def home():
+    new_message = request.args.get('msg')
+    if new_message:
+        append_message_to_file(new_message)
+
+    data = read_messages_from_file()
+
+    # Return a Jinja HTML template, passing the messages as an argument to the template:
+    return render_template('home.html', messages=data['messages'])
+
+```
+```html title="home.html"
+
+<!doctype html>
+<!-- This is a Jinja based template. To read more about Jinja, check
+ https://jinja.palletsprojects.com/en/3.0.x/  -->
+<title>Message board</title>
+<body>
+    <h4>There are {{ messages|length }} messages on the board.</h4>
+
+    <h4> Here are the last 10:</h4>
+    <ul>
+        {% for m in messages[-9:]|reverse %}
+            <li>
+                "{{m.content}}" <small>Posted on {{m.timestamp}}</small>
+            </li>
+        {% endfor %}
+    </ul>
+    <h4> Enter a new message</h4>
+    <form action="/">
+        <label >Your message:</label><br>
+        <input type="text" name="msg"><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+
+```
+
+```json title="data.json"
+
+{
+  "messages": [
+    {
+      "content": "Keys are lost",
+      "timestamp": "2022-02-22 15:37:27"
+    }
+  ]
+}
+
+```
+
+</details>
+</TabItem>
+<TabItem value="v2" label="Version 2">
+
+Builds on Version 1.
+
+**Frontend**
+
+[Deployed on Heroku](https://karlaru-v2.herokuapp.com/)
+
+<img src="/img/heroku-v2-login.png" width="300"/>
+
+<img src="/img/heroku-v2-home.png" width="300"/>
+
+**Backend**
+
+<img src="/img/heroku-v2.svg"/>
+
+<details>
+<summary>Flask webapp code</summary>
+
+```python title="app.py"
+
+from flask import Flask, render_template, request, redirect, flash
+from flask_sqlalchemy import SQLAlchemy
+import datetime
+import os
+from flask_login import login_user, logout_user, login_required, LoginManager, UserMixin
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Flask login from https://flask-login.readthedocs.io/en/latest/
+login_manager = LoginManager()
+login_manager.login_view = "/login"
+login_manager.init_app(app)
+login_manager.login_message = "Login is required for accessing messages"
+app.secret_key = b'ddfgwr345yhfgj76545'
+
+
+@login_manager.user_loader
+def load_user(dummy_value):
+    return User()
+
+
+# Test hard-coded user
+class User(UserMixin):
+    def __init__(self):
+        self.name = "mr Heroku"
+        self.username = "heroku"
+        self.password = "login"
+        self.id = 1
+
+
+class Messageboard(db.Model):
+    __tablename__ = 'messages'
+    id = db.Column(db.Integer, primary_key=True)
+    message_text = db.Column(db.Text())
+    timestamp = db.Column(db.DateTime)
+    name = db.Column(db.Text())
+
+    def __init__(self, name, message_text, timestamp):
+        self.message_text = message_text
+        self.timestamp = timestamp
+        self.name = name
+
+
+db.create_all()
+db.session.commit()
+
+
+@app.route("/", methods=['GET', 'POST'])
+@login_required
+def home():
+    if request.method == 'POST':
+        new_message = request.form['msg']
+        new_name = request.form['name']
+        if new_message:
+            timestamp = datetime.datetime.now()
+            data = Messageboard(new_name, new_message, timestamp)
+            db.session.add(data)
+            db.session.commit()
+    messages = Messageboard.query.order_by(Messageboard.timestamp.desc()).limit(10).all()
+    return render_template('home.html', messages=messages)
+
+
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+    else:
+        username = request.form['username']
+        password = request.form['password']
+        user = load_user("dummy_value")
+        if username == user.username and password == user.password:
+            login_user(user)
+            return redirect("/")
+        flash('Invalid login')
+        return render_template('login.html')
+
+
+@app.route("/logout", methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    return redirect("/login")
+
+```
+```html title="home.html"
+<!doctype html>
+<!-- This is a Jinja based template. To read more about Jinja, check
+ https://jinja.palletsprojects.com/en/3.0.x/  -->
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>Message board</title>
+</head>
+<body>
+    <div class="container-sm">
+        <h3>Welcome to Karl's Heroku app!</h3>
+        {% if current_user.is_authenticated %}
+        <h5 class="text-success">Hi, {{ current_user.name }}! </h5>
+        {% endif %}
+        <h5></h5>
+        <h5><a href="/logout" class="link-danger">Logout</a></h5>
+            <form action="/" class="card p-3 bg-light" method="post">
+                <h4 class="text-success"> Enter a new message</h4>
+                <div class="mb-3">
+                  <label class="form-label">Your name</label>
+                  <input type="text" class="form-control" name="name" value="{{current_user.name}}">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Your message</label>
+                  <textarea class="form-control" name="msg" rows="5"></textarea>
+                </div>
+                <div class="mb-3">
+                  <input type="submit" class="btn btn-success" value="Submit">
+                </div>
+            </form>
+        <br><br>
+        <h3 class="text-success">Showing up to 10 latest messages</h3>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 20%">Date and time</th>
+              <th scope="col" style="width: 15%">Name</th>
+              <th scope="col">Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in messages  %}
+            <tr>
+              <td>{{m.timestamp}}</td>
+              <td>{{m.name}}</td>
+              <td>{{m.message_text}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+</body>
+
+```
+```html title="login.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>Login Page</title>
+</head>
+<body>
+<div class="container-sm">
+        <h3>Welcome to Karl's Heroku app!</h3>
+        <h5></h5>
+            {% for msg in get_flashed_messages() %}
+            <h3 class="text-danger">{{ msg }}</h3>
+            {% endfor %}
+            <form action="/login" class="card p-3 bg-light" method="post">
+                <h4 class="text-success">Enter login details</h4>
+                <div class="mb-3">
+                  <label class="form-label">Username</label>
+                  <input type="text" class="form-control" name="username" placeholder="heroku">
+                  <small class="form-text text-muted">Placeholder is a hint!</small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Password</label>
+                  <input type="password" class="form-control" name="password" placeholder="login">
+                  <small class="form-text text-muted">Placeholder is a hint!</small>
+                </div>
+                <div class="mb-3">
+                  <input type="submit" class="btn btn-success" value="Login">
+                </div>
+            </form>
+</div>
+</body>
+</html>
+```
+</details>
+
+</TabItem>
+<TabItem value="v3" label="Version 3">
+
+Builds on Version 2.
+
+**Frontend**
+
+See [User Interface](category/user-interface)
+
+**Backend**
+
+
+</TabItem>
+</Tabs>
+
+***
+
+## State
+
+State of the web application is stored in S3 bucket and two DynamoDB tables.
+
+<img src="/img/State.svg" width="600"/>
+
+## Triggered functions
+
+Lambda functions that are triggered by:
+- uploading new image to **S3** using [Post new image](https://karlaru.com/post) page
+- deleting message from **DynamoDB** triggers deletion of all related images (original full sized image, thumbnail etc)
+
+<img src="/img/Triggered.svg" width="600"/>
+
+## Content Delivery Network
+
+All images, scripts and style files are served using content delivery network.
+Only HTML pages come directly from backend.
+
+<img src="/img/CDN.svg" width="600"/>

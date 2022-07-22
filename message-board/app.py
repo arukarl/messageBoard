@@ -245,6 +245,8 @@ def my_account():
 def image(image_name):
     """ Image analysis """
     messages = get_dynamodb_messages(FilterExpression=Key('img').eq(image_name))
+    if not messages:
+        flash("Image not found")
     return render_template('image.html', messages=messages)
 
 
