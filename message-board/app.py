@@ -4,6 +4,7 @@ import re
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
+from flask_caching import Cache
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_recaptcha import ReCaptcha
 from flask_seasurf import SeaSurf
@@ -14,6 +15,11 @@ from google.auth.transport import requests
 
 app = Flask(__name__)
 app.config.from_pyfile("conf.cfg")
+
+# Cache
+cache = Cache(app)
+shot_cache = 5    # seconds
+long_cache = 600  # seconds
 
 # Security
 csrf = SeaSurf(app)
@@ -71,7 +77,6 @@ def set_images_url(message):
 
 def get_dynamodb_messages(FilterExpression):
     """ Read all messages from AWS DynamoDB """
-
     messages = messages_table.scan(FilterExpression=FilterExpression)['Items']
     messages = map(set_images_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
@@ -92,16 +97,20 @@ def put_dynamodb_messages(message_id, s3_name, author, location, description):
     })
 
 
+def get_dynamodb_user(user_id):
+    return user_table.get_item(Key={'id': user_id})['Item']
+
+
 @login_manager.user_loader
+@cache.memoize(timeout=long_cache)
 def load_user(user_id):
     """ Load user from DynamoDB by user_id """
-    user = user_table.get_item(Key={'id': user_id})['Item']
+    user = get_dynamodb_user(user_id)
     return User(user['username'], user['id'])
 
 
 class User:
     """ Flask-Login User class """
-
     def __init__(self, name, id, active=True):
         self.id = id
         self.name = name
@@ -119,6 +128,7 @@ class User:
 
 
 @app.route("/", methods=['GET'])
+@cache.cached(timeout=shot_cache)
 def home():
     """ Home page, display all messages """
     messages = get_dynamodb_messages(FilterExpression=Key('thumbnail').eq("true"))
@@ -126,13 +136,14 @@ def home():
 
 
 @app.route("/login", methods=['GET'])
+@cache.cached(timeout=long_cache)
 def login_page():
     """ Login page """
     return render_template('login.html')
 
 
 @csrf.exempt
-@app.route("/login", methods=['POST'])
+@app.route("/auth", methods=['POST'])
 def login_auth():
     """ Verify Google user, create User object and put user data to DynamoDB """
 
@@ -170,12 +181,14 @@ def login_auth():
 @login_required
 def logout():
     """ Logout user """
+    cache.delete_memoized(load_user, current_user.id)
     logout_user()
     return redirect("/")
 
 
 @app.route("/post", methods=['GET'])
 @login_required
+@cache.cached(timeout=long_cache)
 def post():
     """ Image posting form """
     return render_template('post_image.html')
@@ -215,6 +228,7 @@ def post_message():
 
 @app.route("/my", methods=['GET'])
 @login_required
+@cache.cached(timeout=shot_cache)
 def my_messages():
     """ Signed in page showing users' messages """
     messages = get_dynamodb_messages(FilterExpression=Key('google_id').eq(current_user.id))
@@ -236,25 +250,20 @@ def delete():
 
 @app.route("/acc", methods=['GET'])
 @login_required
+@cache.cached(timeout=shot_cache)
 def my_account():
     """ Account information """
     return render_template('my_account.html')
 
 
 @app.route("/image/<image_name>", methods=['GET'])
+@cache.cached(timeout=long_cache)
 def image(image_name):
     """ Image analysis """
     messages = get_dynamodb_messages(FilterExpression=Key('img').eq(image_name))
     if not messages:
         flash("Image not found")
     return render_template('image.html', messages=messages)
-
-
-@app.errorhandler(404)
-def page_not_found(e):
-    """ Redirect all nonexistent URLs to home page"""
-    flash("Page not found. Redirecting to homepage. (404)")
-    return redirect('/')
 
 
 if __name__ == '__main__':
