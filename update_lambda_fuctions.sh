@@ -18,14 +18,17 @@ aws s3 cp . s3://mb-conf-folder/ --recursive --exclude "*" --include "*.zip"
 # Update lambda functions code if function is already created
 aws lambda publish-layer-version --layer-name pillow \
                                  --zip-file fileb://pillow_layer.zip \
+                                 --query 'LayerArn' \
                                  --output yaml || true
 
 aws lambda update-function-code --function-name img_scaler \
                                 --zip-file fileb://img_scaler.zip \
+                                --query 'FunctionName' \
                                 --output yaml || true
 
 aws lambda update-function-code --function-name delete-image \
                                 --zip-file fileb://img_delete.zip \
+                                --query 'FunctionName' \
                                 --output yaml || true
 
 # Build cleanup

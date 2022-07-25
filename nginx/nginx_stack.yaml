@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Nginx based test
+Description: Nginx based deployment
 
 Resources:
 
@@ -9,30 +9,30 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: Z00583582NH093E9U0PRK
-      Name: cf.karlaru.com
+      Name: nginx.karlaru.com
       Type: A
       TTL: 60
       ResourceRecords:
-        - !GetAtt EC2NginxInstance.PublicIp
+        - !GetAtt nginxInstance.PublicIp
 
 
 ############## EC2 #################
 
 # Instance for running NGINX
-  EC2NginxInstance:
+  nginxInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t3.micro
       ImageId: ami-08bdc08970fcbd34a
       KeyName: aws_key
-      IamInstanceProfile: !Ref NginxInstanceProfile
+      IamInstanceProfile: !Ref nginxInstanceProfile
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           SubnetId:
             Ref: Subnet
           GroupSet:
-            - !Ref NginxSecurityGroup
+            - !Ref nginxSecurityGroup
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
@@ -49,7 +49,7 @@ Resources:
             aws s3 cp s3://mb-conf-folder/install_nginx_docker.sh .
             sudo bash install_nginx_docker.sh
 
-  NginxSecurityGroup:
+  nginxSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow http and https incoming
@@ -66,16 +66,16 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0
+          CidrIp: 88.196.254.0/24
 
-  NginxInstanceProfile:
+  nginxInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       InstanceProfileName: NginxProfile
       Roles:
-        - Ref: "RootRole"
+        - Ref: "nginxRole"
 
-  RootRole:
+  nginxRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -88,13 +88,25 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: root
+        - PolicyName: s3Policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: '*'
-                Resource: '*'
+                Action: [
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "dynamodb:PutItem",
+                  "dynamodb:DeleteItem",
+                  "dynamodb:GetItem",
+                  "dynamodb:Scan"
+                ]
+                Resource: [
+                  "arn:aws:s3:::mb-conf-folder/*",
+                  "arn:aws:s3:::karlaru-mb/*",
+                  "arn:aws:dynamodb:eu-north-1:978039897892:table/messages",
+                  "arn:aws:dynamodb:eu-north-1:978039897892:table/users"
+                ]
 
 
 ############## NETWORKING #################
@@ -105,18 +117,12 @@ Resources:
       CidrBlock: 10.0.0.0/20
       EnableDnsSupport: 'true'
       EnableDnsHostnames: 'true'
-      Tags:
-        - Key: "Name"
-          Value: "mb-VPC"
 
   Subnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.1.0/24
-      Tags:
-        - Key: "Name"
-          Value: "mb-PublicSubnet"
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -131,9 +137,6 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-      Tags:
-        - Key: "Name"
-          Value: "mb-RouteTable"
 
   SubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
