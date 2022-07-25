@@ -1,3 +1,5 @@
+kops export kubecfg --admin
+
 cd message-board || true
 # Create docker image
 docker build -t karlaru/message-board .
@@ -20,3 +22,4 @@ kubectl rollout restart deployment/mb
 # shasum -b -a 384 static/form-script.js | awk '{ print $1 }' | xxd -r -p | base64
 # shasum -b -a 384 static/back.js | awk '{ print $1 }' | xxd -r -p | base64
 # shasum -b -a 384 static/custom.css | awk '{ print $1 }' | xxd -r -p | base64
+# shasum -b -a 384 static/thumbnail.js | awk '{ print $1 }' | xxd -r -p | base64

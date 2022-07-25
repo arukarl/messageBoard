@@ -1,3 +1,5 @@
+kops export kubecfg --admin
+
 cd docusaurus|| true
 
 npm run build

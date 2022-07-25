@@ -1,7 +1,7 @@
 import uuid
 import boto3
+import mimetypes
 import re
-from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
 from flask_caching import Cache
@@ -12,14 +12,13 @@ from flask_talisman import Talisman
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-
 app = Flask(__name__)
 app.config.from_pyfile("conf.cfg")
 
 # Cache
 cache = Cache(app)
-shot_cache = 5    # seconds
-long_cache = 600  # seconds
+user_object_cache_timeout = 600   # seconds
+messages_table_cache_timeout = 5  # seconds
 
 # Security
 csrf = SeaSurf(app)
@@ -75,9 +74,10 @@ def set_images_url(message):
     return message
 
 
-def get_dynamodb_messages(FilterExpression):
-    """ Read all messages from AWS DynamoDB """
-    messages = messages_table.scan(FilterExpression=FilterExpression)['Items']
+@cache.memoize(timeout=messages_table_cache_timeout)
+def get_all_messages():
+    """ Read all messages from AWS DynamoDB and cache method return value """
+    messages = messages_table.scan()['Items']
     messages = map(set_images_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
 
@@ -92,19 +92,20 @@ def put_dynamodb_messages(message_id, s3_name, author, location, description):
         "author": author,
         "location": location,
         "description": description,
-        "google_id": current_user.id,
-        "thumbnail": "false"
+        "google_id": current_user.id
     })
 
 
 def get_dynamodb_user(user_id):
+    """ Get current user from db """
+    print("User DB accessed")
     return user_table.get_item(Key={'id': user_id})['Item']
 
 
 @login_manager.user_loader
-@cache.memoize(timeout=long_cache)
+@cache.memoize(timeout=user_object_cache_timeout)
 def load_user(user_id):
-    """ Load user from DynamoDB by user_id """
+    """ Load user from DynamoDB by user_id and return cached User object """
     user = get_dynamodb_user(user_id)
     return User(user['username'], user['id'])
 
@@ -128,15 +129,13 @@ class User:
 
 
 @app.route("/", methods=['GET'])
-@cache.cached(timeout=shot_cache)
 def home():
     """ Home page, display all messages """
-    messages = get_dynamodb_messages(FilterExpression=Key('thumbnail').eq("true"))
+    messages = get_all_messages()
     return render_template('home.html', messages=messages)
 
 
 @app.route("/login", methods=['GET'])
-@cache.cached(timeout=long_cache)
 def login_page():
     """ Login page """
     return render_template('login.html')
@@ -188,7 +187,6 @@ def logout():
 
 @app.route("/post", methods=['GET'])
 @login_required
-@cache.cached(timeout=long_cache)
 def post():
     """ Image posting form """
     return render_template('post_image.html')
@@ -201,9 +199,12 @@ def post_message():
     new_author = remove_html(request.form['author'])
     new_location = remove_html(request.form['location'])
     new_message = remove_html(request.form['description'])
+
     if recaptcha.verify():
         img_file = request.files['img']
+        content_type = mimetypes.guess_type(img_file.filename)[0]
         img_format = img_file.filename.split('.')[-1].lower()
+
         if img_format not in accepted_image_types:
             flash("Invalid photo type")
             flash("Accepted only " + ', '.join(accepted_image_types))
@@ -214,12 +215,12 @@ def post_message():
 
         s3_client.upload_fileobj(img_file, s3_bucket, 'images/' + img_s3_name,
                                  ExtraArgs={'CacheControl': 'max-age=86400, public',
-                                            'Metadata': {'message_id': message_id}})
+                                            'ContentType': content_type})
 
         put_dynamodb_messages(message_id, img_s3_name, new_author, new_location, new_message)
 
-        flash("Message stored")
-        flash("Generating thumbnail.... Refresh after few seconds")
+        flash("Message stored! Generating thumbnail....")
+        cache.delete_memoized(get_all_messages)
     else:
         flash('Invalid reCAPTCHA!')
         return redirect(f"/post?author={new_author}&location={new_location}&description={new_message}")
@@ -228,10 +229,10 @@ def post_message():
 
 @app.route("/my", methods=['GET'])
 @login_required
-@cache.cached(timeout=shot_cache)
 def my_messages():
     """ Signed in page showing users' messages """
-    messages = get_dynamodb_messages(FilterExpression=Key('google_id').eq(current_user.id))
+    messages = filter(lambda message: message['google_id'] == current_user.id, get_all_messages())
+
     return render_template('my_images.html', messages=messages)
 
 
@@ -243,6 +244,7 @@ def delete():
     google_id = request.form["google_id"]
     if message_id and google_id == current_user.id:
         messages_table.delete_item(Key={"message_id": message_id})
+        cache.delete_memoized(get_all_messages)
     else:
         flash("Permission denied")
     return redirect('/my')
@@ -250,17 +252,15 @@ def delete():
 
 @app.route("/acc", methods=['GET'])
 @login_required
-@cache.cached(timeout=shot_cache)
 def my_account():
     """ Account information """
     return render_template('my_account.html')
 
 
 @app.route("/image/<image_name>", methods=['GET'])
-@cache.cached(timeout=long_cache)
 def image(image_name):
     """ Image analysis """
-    messages = get_dynamodb_messages(FilterExpression=Key('img').eq(image_name))
+    messages = filter(lambda message: message['img'] == image_name, get_all_messages())
     if not messages:
         flash("Image not found")
     return render_template('image.html', messages=messages)

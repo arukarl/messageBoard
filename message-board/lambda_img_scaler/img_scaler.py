@@ -1,5 +1,6 @@
 import boto3
 from PIL import Image
+import mimetypes
 
 # Thumbnail size
 size = (150, 150)
@@ -9,9 +10,6 @@ s3_bucket = 'karlaru-mb'
 aws_region = "eu-north-1"
 
 s3_client = boto3.client('s3', region_name=aws_region)
-sqs_client = boto3.client('sqs', region_name=aws_region)
-dynamodb = boto3.resource('dynamodb', region_name="eu-north-1")
-db_table = dynamodb.Table("messages")
 
 
 def lambda_handler(event, context):
@@ -26,14 +24,8 @@ def lambda_handler(event, context):
             image.thumbnail(size)
             image.save(upload_path, quality=95)
 
+        content_type = mimetypes.guess_type(upload_path)[0]
+
         s3_client.upload_file(upload_path, s3_bucket, "thumbnails/" + img_name,
-                              ExtraArgs={'CacheControl': 'max-age=2592000, public'})
-
-        image_metadata = s3_client.head_object(Bucket=s3_bucket,
-                                               Key="images/" + img_name)['ResponseMetadata']['HTTPHeaders']
-
-        message_id = image_metadata['x-amz-meta-message_id']
-
-        db_table.update_item(Key={'message_id': message_id},
-                             UpdateExpression="set thumbnail = :i",
-                             ExpressionAttributeValues={':i': 'true'})
+                              ExtraArgs={'CacheControl': 'max-age=2592000, public',
+                                         'ContentType': content_type})
