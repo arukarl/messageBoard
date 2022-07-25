@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# AWS CloudFront
+# AWS CloudFront + WAF
 
 ### Overview
 

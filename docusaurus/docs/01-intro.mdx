@@ -10,30 +10,24 @@ import TabItem from '@theme/TabItem';
 Building this webapp started during
 **[Cloud Computing course](https://courses.cs.ut.ee/2022/cloud/spring/Main/Practice2)** in UT.
 
-:::tip
-
-This was one of the best courses I have ever taken. Highly recommended!
-
-:::
 
 ## Version History
 
 Major releases. Complexity and sophistication increase substantially with each version.
 
-:::tip Heroku coldstart
-
-When visiting Heroku deployments (versions 1 and 2), it takes about half a minute to start container!
-
-:::
-
 <Tabs>
-<TabItem value="v1" label="Version 1" default>
+<TabItem value="v1" label="Version 1">
 
 Based on course materials by [Jakob Mass](https://bitbucket.org/jaks6/cloud-computing-2022-lab-1/src/master/)
 
 **Frontend**
 
 [Deployed on Heroku](https://karlaru-v1.herokuapp.com/)
+
+:::tip
+Heroku deployment takes about half a minute to start container!
+:::
+
 <img src="/img/heroku-v1.png"/>
 
 **Backend**
@@ -132,13 +126,17 @@ Builds on Version 1.
 
 [Deployed on Heroku](https://karlaru-v2.herokuapp.com/)
 
+:::tip
+Heroku deployment takes about half a minute to start container!
+:::
+
 <img src="/img/heroku-v2-login.png" width="300"/>
 
 <img src="/img/heroku-v2-home.png" width="300"/>
 
 **Backend**
 
-<img src="/img/heroku-v2.svg"/>
+[<img src="/img/heroku-v2.svg"/>](/img/heroku-v2.svg)
 
 <details>
 <summary>Flask webapp code</summary>
@@ -324,7 +322,7 @@ def logout():
 </details>
 
 </TabItem>
-<TabItem value="v3" label="Version 3">
+<TabItem value="v3" label="Version 3" default>
 
 Builds on Version 2.
 
@@ -334,6 +332,9 @@ See [User Interface](category/user-interface)
 
 **Backend**
 
+Simplified logic scheme.
+
+[<img src="/img/app-v3.svg"/>](/img/app-v3.svg)
 
 </TabItem>
 </Tabs>
@@ -343,20 +344,8 @@ See [User Interface](category/user-interface)
 ## State
 
 State of the web application is stored in S3 bucket and two DynamoDB tables.
+Two Lambda functions are keeping state consistent:
+creating thumbnail when a new image is uploaded and deleting images when message is deleted.
 
-<img src="/img/State.svg" width="600"/>
+<img src="/img/State.svg"/>
 
-## Triggered functions
-
-Lambda functions that are triggered by:
-- uploading new image to **S3** using [Post new image](https://karlaru.com/post) page
-- deleting message from **DynamoDB** triggers deletion of all related images (original full sized image, thumbnail etc)
-
-<img src="/img/Triggered.svg" width="600"/>
-
-## Content Delivery Network
-
-All images, scripts and style files are served using content delivery network.
-Only HTML pages come directly from backend.
-
-<img src="/img/CDN.svg" width="600"/>

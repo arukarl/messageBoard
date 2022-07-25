@@ -46,7 +46,6 @@ then [**Delete Images**](lambda-functions/delete-images) Lambda function deletes
 | location                   | String | New image form              |
 | google_id                  | String | Author Google account ID    |
 | timestamp                  | String | Post time                   |
-| thumbnail                  | String | Has thumbnail been created? |
 
 
 ##### CloudFormation template snippet

@@ -51,6 +51,7 @@ login_manager.login_view = "/login"
 user_table = dynamodb.Table("users")
 
 @login_manager.user_loader
+@cache.memoize(timeout=user_object_cache_timeout)
 def load_user(user_id):
     """ Load user from DynamoDB by user_id """
     user = user_table.get_item(Key={'id': user_id})['Item']

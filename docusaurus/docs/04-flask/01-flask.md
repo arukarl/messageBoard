@@ -69,10 +69,10 @@ def set_images_url(message):
     return message
 
 
-def get_dynamodb_messages(FilterExpression):
-    """ Read all messages from AWS DynamoDB """
-
-    messages = messages_table.scan(FilterExpression=FilterExpression)['Items']
+@cache.memoize(timeout=messages_table_cache_timeout)
+def get_all_messages():
+    """ Read all messages from AWS DynamoDB and cache method return value """
+    messages = messages_table.scan()['Items']
     messages = map(set_images_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
 ```

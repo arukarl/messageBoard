@@ -6,5 +6,6 @@
 *.cfg
 *.jpeg
 *secret*
+*cache*
 /.*
 __*

@@ -34,13 +34,6 @@ Resources and actions are as limited as possible for security reasons.
                           "s3:PutObject",
                           "s3:GetObject",
                           "s3:DeleteObject",
-                          "sqs:GetQueueUrl",
-                          "sqs:GetQueueAttributes",
-                          "sqs:ReceiveMessage",
-                          "sqs:SendMessage",
-                          "sqs:DeleteMessage",
-                          "sqs:PurgeQueue",
-                          "dynamodb:UpdateItem",
                           "dynamodb:DescribeStream",
                           "dynamodb:GetRecords",
                           "dynamodb:GetShardIterator",
@@ -51,9 +44,6 @@ Resources and actions are as limited as possible for security reasons.
                         ]
                 Resource: [
                           "arn:aws:s3:::karlaru-mb/*",
-                          "arn:aws:sqs:eu-north-1:978039897892:image_rezised",
-                          "arn:aws:sqs:eu-north-1:978039897892:delete-image",
-                          "arn:aws:dynamodb:eu-north-1:978039897892:table/messages",
                           "arn:aws:dynamodb:eu-north-1:978039897892:table/messages/stream/*",
                           "arn:aws:logs:eu-north-1:978039897892:log-group:/aws/*"
                         ]
