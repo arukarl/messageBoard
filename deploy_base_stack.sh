@@ -1,7 +1,5 @@
 cd message-board || exit
 
-
-
 # Creating thumbnail function
 zip -r -j  img_scaler.zip lambda_img_scaler/img_scaler.py
 
