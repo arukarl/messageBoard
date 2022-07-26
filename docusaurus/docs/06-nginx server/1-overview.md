@@ -4,4 +4,4 @@ sidebar_position: 1
 
 # Overview
 
-AWS s3
+<img src="/img/nginx.svg"/>
