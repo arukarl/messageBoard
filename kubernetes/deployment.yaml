@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: iam-account
+  namespace: default
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,6 +19,7 @@ spec:
       labels:
         app: mb
     spec:
+      serviceAccountName: iam-account
       containers:
       - name: mb
         image: karlaru/message-board
@@ -20,19 +28,12 @@ spec:
           - name: tcp
             containerPort: 5000
         volumeMounts:
-          - mountPath: "/etc/boto.cfg"
-            name: aws-conf
-            subPath: boto.cfg
-            readOnly: true
           - mountPath: "/messageBoard/conf.cfg"
             name: flask-conf
             subPath: conf.cfg
             readOnly: true
 
       volumes:
-      - name: aws-conf
-        secret:
-            secretName: aws-credentials
       - name: flask-conf
         secret:
             secretName: flask-conf

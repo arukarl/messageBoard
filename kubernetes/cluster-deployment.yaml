@@ -28,11 +28,37 @@ spec:
       volumeSize: 1
     memoryRequest: 100Mi
     name: events
+  iam:
+    serviceAccountExternalPermissions:
+      - name: iam-account
+        namespace: default
+        aws:
+          inlinePolicy: |-
+            [
+              {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:PutObject",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::karlaru-mb/*",
+                    "arn:aws:dynamodb:eu-north-1:978039897892:table/messages",
+                    "arn:aws:dynamodb:eu-north-1:978039897892:table/users"
+                ]
+              }
+            ]
+  certManager:
+    enabled: true
+  podIdentityWebhook:
+    enabled: true
   kubelet:
     anonymousAuth: false
   kubernetesApiAccess:
-  - 0.0.0.0/0
-  - ::/0
+  - 88.196.254.0/24
   kubernetesVersion: 1.23.9
   masterPublicName: api.karlaru.com
   networkCIDR: 10.0.0.0/20
@@ -110,12 +136,3 @@ spec:
   rootVolumeType: gp3
   subnets:
   - eu-north-1b
-
-
-
-  #  mixedInstancesPolicy:
-  #    instances:
-  #    - t3.small
-  #    onDemandAboveBase: 0
-  #    onDemandBase: 0
-  #    spotAllocationStrategy: capacity-optimized
