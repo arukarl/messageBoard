@@ -1,5 +1,3 @@
-# export KOPS_STATE_STORE=s3://karl-aru-mb-state
-# kops export kubecfg --admin
 apiVersion: kops.k8s.io/v1alpha2
 kind: Cluster
 metadata:
@@ -35,7 +33,7 @@ spec:
   kubernetesApiAccess:
   - 0.0.0.0/0
   - ::/0
-  kubernetesVersion: 1.23.8
+  kubernetesVersion: 1.23.9
   masterPublicName: api.karlaru.com
   networkCIDR: 10.0.0.0/20
   networking:
@@ -45,8 +43,7 @@ spec:
     discoveryStore: s3://karlaru-mb-oidc/karlaru.com/discovery/karlaru.com
     enableAWSOIDCProvider: true
   sshAccess:
-  - 0.0.0.0/0
-  - ::/0
+  - 88.196.254.0/24
   subnets:
   - cidr: 10.0.0.0/24
     name: eu-north-1b
@@ -73,16 +70,10 @@ spec:
   instanceMetadata:
     httpPutResponseHopLimit: 3
     httpTokens: required
-  machineType: t3.medium
-  maxPrice: "0.03"
+  machineType: c5.xlarge
+  maxPrice: "0.2"
   maxSize: 2
   minSize: 1
-  mixedInstancesPolicy:
-    instances:
-    - t3.medium
-    onDemandAboveBase: 0
-    onDemandBase: 0
-    spotAllocationStrategy: capacity-optimized
   nodeLabels:
     kops.k8s.io/instancegroup: master-eu-north-1b
     lifecycle: spot
@@ -107,16 +98,10 @@ spec:
   instanceMetadata:
     httpPutResponseHopLimit: 1
     httpTokens: required
-  machineType: t3.small
-  maxPrice: "0.01"
-  maxSize: 5
-  minSize: 2
-  mixedInstancesPolicy:
-    instances:
-    - t3.small
-    onDemandAboveBase: 0
-    onDemandBase: 0
-    spotAllocationStrategy: capacity-optimized
+  machineType: c5.large
+  maxPrice: "0.1"
+  maxSize: 3
+  minSize: 1
   nodeLabels:
     kops.k8s.io/instancegroup: nodes-eu-north-1b
     lifecycle: spot
@@ -125,3 +110,12 @@ spec:
   rootVolumeType: gp3
   subnets:
   - eu-north-1b
+
+
+
+  #  mixedInstancesPolicy:
+  #    instances:
+  #    - t3.small
+  #    onDemandAboveBase: 0
+  #    onDemandBase: 0
+  #    spotAllocationStrategy: capacity-optimized
