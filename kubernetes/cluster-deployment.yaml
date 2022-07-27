@@ -8,17 +8,19 @@ spec:
     dns: {}
   authorization:
     rbac: {}
+  clusterAutoscaler:
+    enabled: false
   channel: stable
   cloudProvider: aws
   configBase: s3://karl-aru-mb-state/karlaru.com
   etcdClusters:
-  - cpuRequest: 200m
+  - cpuRequest: 100m
     etcdMembers:
     - encryptedVolume: true
       instanceGroup: master-eu-north-1b
       name: b
       volumeSize: 1
-    memoryRequest: 100Mi
+    memoryRequest: 50Mi
     name: main
   - cpuRequest: 100m
     etcdMembers:
@@ -26,7 +28,7 @@ spec:
       instanceGroup: master-eu-north-1b
       name: b
       volumeSize: 1
-    memoryRequest: 100Mi
+    memoryRequest: 50Mi
     name: events
   iam:
     serviceAccountExternalPermissions:
@@ -96,9 +98,9 @@ spec:
   instanceMetadata:
     httpPutResponseHopLimit: 3
     httpTokens: required
-  machineType: c5.xlarge
-  maxPrice: "0.2"
-  maxSize: 2
+  machineType: t3.small
+  maxPrice: "0.022"
+  maxSize: 1
   minSize: 1
   nodeLabels:
     kops.k8s.io/instancegroup: master-eu-north-1b
@@ -124,10 +126,10 @@ spec:
   instanceMetadata:
     httpPutResponseHopLimit: 1
     httpTokens: required
-  machineType: c5.large
-  maxPrice: "0.1"
-  maxSize: 3
-  minSize: 1
+  machineType: t3.micro
+  maxPrice: "0.012"
+  maxSize: 2
+  minSize: 2
   nodeLabels:
     kops.k8s.io/instancegroup: nodes-eu-north-1b
     lifecycle: spot

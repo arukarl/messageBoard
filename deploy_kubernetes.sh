@@ -14,7 +14,7 @@ kubectl create secret tls main-tls --key="../secrets/SectigoSSL.key" --cert="../
 
 kubectl create secret generic flask-conf --from-file=../message-board/conf.cfg
 
-kubectl apply -f deployment.yaml
+kubectl apply -f deployment-mb.yaml
 
 kubectl apply -f deployment-docs.yaml
 
@@ -24,6 +24,9 @@ kubectl apply -f ingress.yaml
 
 echo "Waiting 60s to get load balancer URL"
 sleep 60
-nlb="$(kubectl get ingress -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
 
-echo "$nlb"
+printf "\nAdd\n"
+echo "$(kubectl get ingress -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+echo "to Route53 hosted zone (karlaru.com) records:"
+echo "karlaru.com"
+echo "docs.karlaru.com"
