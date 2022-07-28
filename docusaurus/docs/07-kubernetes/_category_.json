@@ -1,8 +1,0 @@
-{
-  "label": "Kubernetes",
-  "position": 7,
-  "link": {
-    "type": "generated-index",
-    "description": "Cluster is deployed using kOps - \"The easiest way to get a production grade Kubernetes cluster up and running.\""
-  }
-}
