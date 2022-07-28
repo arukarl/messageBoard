@@ -98,7 +98,6 @@ def put_dynamodb_messages(message_id, s3_name, author, location, description):
 
 def get_dynamodb_user(user_id):
     """ Get current user from db """
-    print("User DB accessed")
     return user_table.get_item(Key={'id': user_id})['Item']
 
 
