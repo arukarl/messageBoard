@@ -8,8 +8,6 @@ spec:
     dns: {}
   authorization:
     rbac: {}
-  clusterAutoscaler:
-    enabled: false
   channel: stable
   cloudProvider: aws
   configBase: s3://karl-aru-mb-state/karlaru.com
@@ -70,8 +68,6 @@ spec:
   serviceAccountIssuerDiscovery:
     discoveryStore: s3://karlaru-mb-oidc/karlaru.com/discovery/karlaru.com
     enableAWSOIDCProvider: true
-  sshAccess:
-  - 88.196.254.0/24
   subnets:
   - cidr: 10.0.0.0/24
     name: eu-north-1b

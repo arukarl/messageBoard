@@ -8,11 +8,11 @@ kops update cluster --name karlaru.com --yes --admin
 
 kops validate cluster --wait 15m
 
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/aws/deploy.yaml
-
 kubectl create secret tls main-tls --key="../secrets/SectigoSSL.key" --cert="../secrets/SectigoSSL.crt"
 
 kubectl create secret generic flask-conf --from-file=../message-board/conf.cfg
+
+bash ingress.sh
 
 kubectl apply -f deployment-mb.yaml
 
