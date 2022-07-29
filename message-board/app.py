@@ -2,6 +2,7 @@ import uuid
 import boto3
 import mimetypes
 import re
+from botocore.exceptions import ClientError
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash
 from flask_caching import Cache
@@ -77,28 +78,42 @@ def set_images_url(message):
 @cache.memoize(timeout=messages_table_cache_timeout)
 def get_all_messages():
     """ Read all messages from AWS DynamoDB and cache method return value """
-    messages = messages_table.scan()['Items']
+    try:
+        messages = messages_table.scan()['Items']
+    except ClientError as err:
+        flash(f"Couldn't query messages table. Here's why: {err.response['Error']['Message']}")
+        return []
+
     messages = map(set_images_url, messages)
     return sorted(messages, key=lambda m: m['timestamp'], reverse=True)
 
 
 def put_dynamodb_messages(message_id, s3_name, author, location, description):
     """ Write new message to AWS DynamoDB """
-
-    messages_table.put_item(Item={
-        "message_id": message_id,
-        "img": s3_name,
-        "timestamp": str(datetime.now()),
-        "author": author,
-        "location": location,
-        "description": description,
-        "google_id": current_user.id
-    })
+    try:
+        messages_table.put_item(Item={
+            "message_id": message_id,
+            "img": s3_name,
+            "timestamp": str(datetime.now()),
+            "author": author,
+            "location": location,
+            "description": description,
+            "google_id": current_user.id
+        })
+    except ClientError as err:
+        flash(f"Couldn't put message to a table. Here's why: {err.response['Error']['Message']}")
 
 
 def get_dynamodb_user(user_id):
     """ Get current user from db """
-    return user_table.get_item(Key={'id': user_id})['Item']
+    item = []
+    try:
+        item = user_table.get_item(Key={'id': user_id})['Item']
+    except ClientError as err:
+        flash(f"Couldn't query users table. Here's why: {err.response['Error']['Message']}")
+    except KeyError:
+        flash(f"User with id {user_id} not found from users table")
+    return item
 
 
 @login_manager.user_loader
@@ -106,7 +121,10 @@ def get_dynamodb_user(user_id):
 def load_user(user_id):
     """ Load user from DynamoDB by user_id and return cached User object """
     user = get_dynamodb_user(user_id)
-    return User(user['username'], user['id'])
+    if user:
+        return User(user['username'], user['id'])
+    else:
+        flash("Coudn't load User Object")
 
 
 class User:
@@ -163,14 +181,17 @@ def login_auth():
         token = str(request.form['credential'])
         client_id = "672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
         id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
-        userid = id_info['sub']
+        user_id = id_info['sub']
         username = id_info['name']
     except ValueError:
         flash('Invalid Google ID token')
         return login_page()
+    try:
+        user_table.put_item(Item={"id": user_id, "username": username})
+    except ClientError as err:
+        flash(f"Couldn't put item to users table. Here's why: {err.response['Error']['Message']}")
 
-    user_table.put_item(Item={"id": userid, "username": username})
-    login_user(User(username, userid))
+    login_user(User(username, user_id))
 
     return redirect("/my")
 
@@ -212,12 +233,14 @@ def post_message():
         message_id = str(uuid.uuid4())
         img_s3_name = str(uuid.uuid4()) + '.' + img_format
 
-        s3_client.upload_fileobj(img_file, s3_bucket, 'images/' + img_s3_name,
-                                 ExtraArgs={'CacheControl': 'max-age=86400, public',
-                                            'ContentType': content_type})
+        try:
+            s3_client.upload_fileobj(img_file, s3_bucket, 'images/' + img_s3_name,
+                                     ExtraArgs={'CacheControl': 'max-age=86400, public',
+                                                'ContentType': content_type})
+        except ClientError as err:
+            flash(f"Couldn't upload image to s3 bucket. Here's why: {err.response['Error']['Message']}")
 
         put_dynamodb_messages(message_id, img_s3_name, new_author, new_location, new_message)
-
         flash("Message stored! Generating thumbnail....")
         cache.delete_memoized(get_all_messages)
     else:
@@ -242,7 +265,13 @@ def delete():
     message_id = request.form["id"]
     google_id = request.form["google_id"]
     if message_id and google_id == current_user.id:
-        messages_table.delete_item(Key={"message_id": message_id})
+        try:
+            messages_table.delete_item(Key={"message_id": message_id})
+        except ClientError as err:
+            flash(f"Couldn't delete message from table. Here's why: {err.response['Error']['Message']}")
+        except KeyError:
+            flash("Message not found!")
+
         cache.delete_memoized(get_all_messages)
     else:
         flash("Permission denied")
