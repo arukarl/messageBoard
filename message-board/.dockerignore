@@ -11,3 +11,4 @@ mb*
 static*
 aws_*
 build_*
+test_*
