@@ -68,7 +68,7 @@ def remove_html(string):
     return regex.sub('', string)
 
 
-def set_images_url(message):
+def set_images_url(message, cdn_url=cdn_url):
     """ Add images CDN URLs to message object """
     message['thumbnail_url'] = cdn_url + "thumbnails/" + message['img']
     message['img_url'] = cdn_url + "images/" + message['img']
