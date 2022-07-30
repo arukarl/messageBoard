@@ -2,6 +2,14 @@ kops export kubecfg --admin
 
 cd message-board || true
 
+pytest
+
+if [[ $? != 0 ]]; then
+  echo "Some tests failed"
+  echo "Exiting build sequence"
+  exit
+fi
+
 docker build -t karlaru/message-board .
 
 docker login

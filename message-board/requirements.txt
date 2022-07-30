@@ -25,3 +25,4 @@ flask-login==0.6.1
 flask-seasurf
 flask-talisman
 flask-caching
+pytest
