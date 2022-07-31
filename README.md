@@ -2,11 +2,11 @@
 
 ### Live Deployments:
 
-Nginx on EC2: [nginx.karlaru.com](https://nginx.karlaru.com)
+Nginx+docker on EC2: [nginx.karlaru.com](https://nginx.karlaru.com)
 
 messageBoard on K8s: [karlaru.com](https://karlaru.com)
 
-Docs on K8s: [docs](https://docs.karlaru.com)
+Docs on K8s: [docs.karlaru.com](https://docs.karlaru.com)
 
 <hr>
 
