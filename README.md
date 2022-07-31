@@ -12,15 +12,15 @@ Docs on K8s: [docs](https://docs.karlaru.com)
 
 ### How to deploy?
 
-**Deploy state stack**
+**State stack**
 
 `bash deploy_base_stack.sh`
 
-**Deploy ec2 with nginx**
+**ec2 with nginx**
 
 `bash deploy_nginx.sh`
 
-**Deploy Kubernetes cluster**
+**Kubernetes (K8s) cluster**
 
 `bash deploy_kubernetes.sh`
 
