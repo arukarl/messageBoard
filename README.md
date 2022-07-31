@@ -2,6 +2,8 @@
 
 ### Live Deployments:
 
+First version on Heroku [karlaru-v1.herokuapp.com/](https://karlaru-v1.herokuapp.com/)
+
 Nginx+docker on EC2: [nginx.karlaru.com](https://nginx.karlaru.com)
 
 messageBoard on K8s: [karlaru.com](https://karlaru.com)
