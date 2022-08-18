@@ -21,12 +21,3 @@ kubectl apply -f deployment-docs.yaml
 echo "Waiting 60s before appling ingress"
 sleep 60
 kubectl apply -f ingress.yaml
-
-echo "Waiting 60s to get load balancer URL"
-sleep 60
-
-printf "\nAdd\n"
-echo "$(kubectl get ingress -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
-echo "to Route53 hosted zone (karlaru.com) records:"
-echo "karlaru.com"
-echo "docs.karlaru.com"

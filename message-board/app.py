@@ -104,6 +104,13 @@ def put_dynamodb_messages(message_id, s3_name, author, location, description):
         flash(f"Couldn't put message to a table. Here's why: {err.response['Error']['Message']}")
 
 
+def put_item_user_table(user_id, username):
+    try:
+        user_table.put_item(Item={"id": user_id, "username": username})
+    except ClientError as err:
+        flash(f"Couldn't put item to users table. Here's why: {err.response['Error']['Message']}")
+
+
 def get_dynamodb_user(user_id):
     """ Get current user from db """
     item = []
@@ -129,11 +136,11 @@ def load_user(user_id):
 
 class User:
     """ Flask-Login User class """
-    def __init__(self, name, id, active=True):
+    def __init__(self, name, id, active=True, is_authenticated=True):
         self.id = id
         self.name = name
         self.is_active = active
-        self.is_authenticated = True
+        self.is_authenticated = is_authenticated
 
     def is_authenticated(self):
         return self.is_authenticated
@@ -186,14 +193,18 @@ def login_auth():
     except ValueError:
         flash('Invalid Google ID token')
         return login_page()
-    try:
-        user_table.put_item(Item={"id": user_id, "username": username})
-    except ClientError as err:
-        flash(f"Couldn't put item to users table. Here's why: {err.response['Error']['Message']}")
-
+    put_item_user_table(user_id, username)
     login_user(User(username, user_id))
 
     return redirect("/my")
+
+
+@app.route("/incognito", methods=['POST'])
+def incognito_login():
+    if recaptcha.verify():
+        login_user(User("Guest", "123456789"))
+        return redirect("/my")
+    return login_page()
 
 
 @app.route("/logout", methods=['GET'])

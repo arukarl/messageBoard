@@ -9,8 +9,9 @@
 
         <div class="mb-3">
             <label class="form-label input-sm">Author</label>
-            <input type="text" class="form-control input-sm" id="author" name="author" placeholder="Author" value="{{ current_user.name }}">
-            <small class="form-text text-muted">Default name is from Google account. Can be changed for privacy.</small>
+            <input type="text" class="form-control input-sm" id="author" name="author" placeholder="Author" value="{{ current_user.name }}"
+            {% if current_user.name=="Guest" %} disabled {% endif %}>
+            <small class="form-text text-muted">Users authenticated by Google Identity can change name.</small>
         </div>
 
         <div class="mb-3">

@@ -4,7 +4,6 @@
 
 {% block body %}
     <h6> Google Identity</h6>
-    <p>Login to enable posting new images!</p>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div id="g_id_onload"
          data-client_id="672740708731-oudggtkgmcuagh01hfm89jnjvjb94s6r.apps.googleusercontent.com"
@@ -21,4 +20,23 @@
          data-logo_alignment="left"
          data-width=400>
     </div>
+    <br>
+    <hr>
+    <br>
+    <h6>Incognito Login</h6>
+    <form action="/incognito" class="card p-3 bg-light" method="post" enctype="multipart/form-data">
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        {{ recaptcha }}
+
+        <div class="mb-3">
+            <label class="form-label input-sm">Username</label>
+            <input type="text" class="form-control input-sm" name="username" value="Guest" disabled>
+        </div>
+
+        <div class="mb-3">
+            <input type="submit" class="btn btn-success" value="Incognito login">
+        </div>
+    </form>
 {% endblock %}
